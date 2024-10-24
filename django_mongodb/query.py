@@ -76,7 +76,9 @@ class MongoQuery:
         Return a pymongo CommandCursor that can be iterated on to give the
         results of the query.
         """
-        return self.collection.aggregate(self.get_pipeline())
+        pipeline = self.get_pipeline()
+        print(pipeline)
+        return self.collection.aggregate(pipeline)
 
     def get_pipeline(self):
         pipeline = []

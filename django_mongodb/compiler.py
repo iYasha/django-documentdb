@@ -185,20 +185,7 @@ class SQLCompiler(compiler.SQLCompiler):
         pipeline = []
         if not ids:
             group["_id"] = None
-            pipeline.append({"$facet": {"group": [{"$group": group}]}})
-            pipeline.append(
-                {
-                    "$addFields": {
-                        key: {
-                            "$getField": {
-                                "input": {"$arrayElemAt": ["$group", 0]},
-                                "field": key,
-                            }
-                        }
-                        for key in group
-                    }
-                }
-            )
+            pipeline.append({"$group": group})
         else:
             group["_id"] = ids
             pipeline.append({"$group": group})
@@ -220,6 +207,7 @@ class SQLCompiler(compiler.SQLCompiler):
             all_replacements.update(replacements)
             pipeline = self._build_aggregation_pipeline(ids, group)
             if self.having:
+                # TODO: Check if having works correctly.
                 having = self.having.replace_expressions(all_replacements).as_mql(
                     self, self.connection
                 )
@@ -388,7 +376,7 @@ class SQLCompiler(compiler.SQLCompiler):
             except FullResultSet:
                 query.mongo_query = {}
             else:
-                query.mongo_query = {"$expr": expr}
+                query.mongo_query = expr
         if extra_fields:
             query.extra_fields = self.get_project_fields(extra_fields, force_expression=True)
         query.subqueries = self.subqueries

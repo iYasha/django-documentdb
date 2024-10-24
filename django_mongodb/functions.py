@@ -99,7 +99,11 @@ def extract(self, compiler, connection):
 
 
 def func(self, compiler, connection):
+    # Functions are using array syntax and for field name we want to add $
     lhs_mql = process_lhs(self, compiler, connection)
+    if isinstance(lhs_mql, list):
+        field_name = lhs_mql[0]
+        lhs_mql[0] = f"${field_name}"
     operator = MONGO_OPERATORS.get(self.__class__, self.function.lower())
     return {f"${operator}": lhs_mql}
 

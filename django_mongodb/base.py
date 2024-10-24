@@ -83,23 +83,15 @@ class DatabaseWrapper(BaseDatabaseWrapper):
     }
 
     def _isnull_operator(a, b):
-        is_null = {
-            "$or": [
-                # The path does not exist (i.e. is "missing")
-                {"$eq": [{"$type": a}, "missing"]},
-                # or the value is None.
-                {"$eq": [a, None]},
-            ]
-        }
-        return is_null if b else {"$not": is_null}
+        return {a: None} if b else {a: {"$ne": None}}
 
     mongo_operators = {
-        "exact": lambda a, b: {"$eq": [a, b]},
-        "gt": lambda a, b: {"$gt": [a, b]},
-        "gte": lambda a, b: {"$gte": [a, b]},
-        "lt": lambda a, b: {"$lt": [a, b]},
-        "lte": lambda a, b: {"$lte": [a, b]},
-        "in": lambda a, b: {"$in": [a, b]},
+        "exact": lambda field_name, value: {field_name: value},
+        "gt": lambda field_name, value: {field_name: {"$gt": value}},
+        "gte": lambda field_name, value: {field_name: {"$gte": value}},
+        "lt": lambda field_name, value: {field_name: {"$lt": value}},
+        "lte": lambda field_name, value: {field_name: {"$lte": value}},
+        "in": lambda a, b: {a: {"$in": b}},
         "isnull": _isnull_operator,
         "range": lambda a, b: {
             "$and": [

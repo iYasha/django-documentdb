@@ -62,10 +62,10 @@ def col(self, compiler, connection):  # noqa: ARG001
         except KeyError:
             index = len(compiler.column_indices)
             compiler.column_indices[self] = index
-        return f"$${compiler.PARENT_FIELD_TEMPLATE.format(index)}"
+        return f"$${compiler.PARENT_FIELD_TEMPLATE.format(index)}"  # TODO: Potential bug
     # Add the column's collection's alias for columns in joined collections.
     prefix = f"{self.alias}." if self.alias != compiler.collection_name else ""
-    return f"${prefix}{self.target.column}"
+    return f"{prefix}{self.target.column}"
 
 
 def combined_expression(self, compiler, connection):
