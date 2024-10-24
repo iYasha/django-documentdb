@@ -28,7 +28,7 @@ def aggregate(
     if resolve_inner_expression:
         return lhs_mql
     operator = operator or MONGO_AGGREGATIONS.get(self.__class__, self.function.lower())
-    return {f"${operator}": lhs_mql}
+    return {f"${operator}": f"${lhs_mql}"}
 
 
 def count(self, compiler, connection, resolve_inner_expression=False, **extra_context):  # noqa: ARG001
@@ -49,7 +49,7 @@ def count(self, compiler, connection, resolve_inner_expression=False, **extra_co
             inner_expression = process_lhs(node, compiler, connection)
         else:
             lhs_mql = process_lhs(self, compiler, connection)
-            null_cond = {"$in": [{"$type": lhs_mql}, ["missing", "null"]]}
+            null_cond = {"$in": [{"$type": f"${lhs_mql}"}, ["missing", "null"]]}
             inner_expression = {
                 "$cond": {"if": null_cond, "then": None, "else": lhs_mql if self.distinct else 1}
             }
