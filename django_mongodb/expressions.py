@@ -73,8 +73,12 @@ def col(self, compiler, connection):  # noqa: ARG001
 
 def combined_expression(self, compiler, connection):
     expressions = [
-        self.lhs.as_mql(compiler, connection),
-        self.rhs.as_mql(compiler, connection),
+        f"${self.lhs.as_mql(compiler, connection)}"
+        if isinstance(self.lhs, Col)
+        else self.lhs.as_mql(compiler, connection),
+        f"${self.rhs.as_mql(compiler, connection)}"
+        if isinstance(self.rhs, Col)
+        else self.rhs.as_mql(compiler, connection),
     ]
     return connection.ops.combine_expression(self.connector, expressions)
 
