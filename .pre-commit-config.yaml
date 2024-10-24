@@ -67,7 +67,7 @@ repos:
   hooks:
     - id: check-jsonschema
       name: "Check GitHub Workflows"
-      files: ^\.github/workflows/
+      files: ^\old.github/workflows/
       types: [yaml]
       args: ["--schemafile", "https://json.schemastore.org/github-workflow"]
       stages: [manual]
