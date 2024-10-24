@@ -3,18 +3,20 @@ requires = ["setuptools>=65.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "django-mongodb"
+name = "django-documentdb"
 dynamic = ["version"]
-description = "MongoDB backend for Django"
+description = "DocumentDB/MongoDB backend for Django"
 readme = "README.md"
 license = {file="LICENSE"}
 requires-python = ">=3.10"
 authors = [
     { name = "The MongoDB Python Team" },
+    { name = "iYasha" },
 ]
 keywords = [
     "mongo",
     "mongodb",
+    "documentdb",
     "pymongo",
     "django"
 ]

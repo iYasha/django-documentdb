@@ -1,3 +1,5 @@
+import warnings
+
 from django.db import NotSupportedError
 from django.db.models.fields.json import (
     ContainedBy,
@@ -15,6 +17,7 @@ from django.db.models.fields.json import (
 
 from ..lookups import builtin_lookup
 from ..query_utils import process_lhs, process_rhs
+from ..utils import IndexNotUsedWarning
 
 
 def contained_by(self, compiler, connection):  # noqa: ARG001
@@ -36,6 +39,7 @@ def _has_key_predicate(path, root_column, negated=False):
             {"$ne": [root_column, None]},
         ]
     }
+    warnings.warn("You're using $ne, index will not be used", IndexNotUsedWarning, stacklevel=1)
     if negated:
         result = {"$not": result}
     return result
@@ -154,6 +158,7 @@ def key_transform_numeric_lookup_mixin(self, compiler, connection):
     lhs = process_lhs(self, compiler, connection)
     # Check if the type of lhs is not "missing" or "null".
     not_missing_or_null = {"$not": {"$in": [{"$type": lhs}, ["missing", "null"]]}}
+    warnings.warn("You're using $not, index will not be used.", IndexNotUsedWarning, stacklevel=1)
     return {"$and": [expr, not_missing_or_null]}
 
 
