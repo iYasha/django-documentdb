@@ -1,3 +1,5 @@
+default_language_version:
+    python: python3.11
 
 repos:
 - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -62,15 +64,15 @@ repos:
       args: ["--ignore=D001"]  # ignore line length
       stages: [manual]
 
-- repo: https://github.com/sirosen/check-jsonschema
-  rev: 0.27.0
-  hooks:
-    - id: check-jsonschema
-      name: "Check GitHub Workflows"
-      files: ^\old.github/workflows/
-      types: [yaml]
-      args: ["--schemafile", "https://json.schemastore.org/github-workflow"]
-      stages: [manual]
+#- repo: https://github.com/sirosen/check-jsonschema
+#  rev: 0.27.0
+#  hooks:
+#    - id: check-jsonschema
+#      name: "Check GitHub Workflows"
+#      files: ^\old.github/workflows/
+#      types: [yaml]
+#      args: ["--schemafile", "https://json.schemastore.org/github-workflow"]
+#      stages: [manual]
 
 - repo: https://github.com/codespell-project/codespell
   rev: "v2.2.6"

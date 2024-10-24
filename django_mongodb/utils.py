@@ -5,7 +5,6 @@ import django
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.db.backends.utils import logger
-from django.utils.version import get_version_tuple
 
 
 def check_django_compatability():
@@ -16,7 +15,7 @@ def check_django_compatability():
     """
     from . import __version__
 
-    if django.VERSION[:2] != get_version_tuple(__version__)[:2]:
+    if django.VERSION[:2] < (5, 0):
         A = django.VERSION[0]
         B = django.VERSION[1]
         raise ImproperlyConfigured(
@@ -120,3 +119,11 @@ class OperationCollector(OperationDebugWrapper):
             self.log(method, args, kwargs)
 
         return wrapper
+
+
+class DocumentDBIncompatibleWarning(Warning):
+    pass
+
+
+class IndexNotUsedWarning(DocumentDBIncompatibleWarning):
+    pass

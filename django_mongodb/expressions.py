@@ -1,4 +1,5 @@
 import datetime
+import warnings
 from decimal import Decimal
 from uuid import UUID
 
@@ -23,6 +24,8 @@ from django.db.models.expressions import (
     When,
 )
 from django.db.models.sql import Query
+
+from django_mongodb.utils import IndexNotUsedWarning
 
 
 def case(self, compiler, connection):
@@ -85,6 +88,8 @@ def f(self, compiler, connection):  # noqa: ARG001
 
 
 def negated_expression(self, compiler, connection):
+    warnings.warn("You're using $not, index will not be used.", IndexNotUsedWarning, stacklevel=4)
+
     return {"$not": expression_wrapper(self, compiler, connection)}
 
 

@@ -1,3 +1,4 @@
+import warnings
 from functools import reduce, wraps
 from operator import add as add_operator
 
@@ -10,6 +11,8 @@ from django.db.models.sql.constants import INNER
 from django.db.models.sql.datastructures import Join
 from django.db.models.sql.where import AND, OR, XOR, ExtraWhere, NothingNode, WhereNode
 from pymongo.errors import BulkWriteError, DuplicateKeyError, PyMongoError
+
+from django_mongodb.utils import IndexNotUsedWarning
 
 
 def wrap_database_errors(func):
@@ -77,7 +80,6 @@ class MongoQuery:
         results of the query.
         """
         pipeline = self.get_pipeline()
-        print(pipeline)
         return self.collection.aggregate(pipeline)
 
     def get_pipeline(self):
@@ -299,6 +301,10 @@ def where_node(self, compiler, connection):
         raise FullResultSet
 
     if self.negated and mql:
+        warnings.warn(
+            "You're using $not, index will not be used.", IndexNotUsedWarning, stacklevel=4
+        )
+
         mql = {"$not": mql}
 
     return mql

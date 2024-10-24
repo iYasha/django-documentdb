@@ -1,3 +1,5 @@
+import warnings
+
 from django.db.backends.base.base import BaseDatabaseWrapper
 from django.db.backends.signals import connection_created
 from pymongo.collection import Collection
@@ -11,7 +13,7 @@ from .introspection import DatabaseIntrospection
 from .operations import DatabaseOperations
 from .query_utils import regex_match
 from .schema import DatabaseSchemaEditor
-from .utils import OperationDebugWrapper
+from .utils import IndexNotUsedWarning, OperationDebugWrapper
 
 
 class Cursor:
@@ -83,7 +85,11 @@ class DatabaseWrapper(BaseDatabaseWrapper):
     }
 
     def _isnull_operator(a, b):
-        return {a: None} if b else {a: {"$ne": None}}
+        if b:
+            return {a: None}
+
+        warnings.warn("You're using $ne, index will not be used", IndexNotUsedWarning, stacklevel=4)
+        return {a: {"$ne": None}}
 
     mongo_operators = {
         "exact": lambda field_name, value: {field_name: value},
