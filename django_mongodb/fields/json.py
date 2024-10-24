@@ -39,7 +39,7 @@ def _has_key_predicate(path, root_column, negated=False):
             {"$ne": [root_column, None]},
         ]
     }
-    warnings.warn("You're using $ne, index will not be used", IndexNotUsedWarning, stacklevel=4)
+    warnings.warn("You're using $ne, index will not be used", IndexNotUsedWarning, stacklevel=1)
     if negated:
         result = {"$not": result}
     return result
@@ -158,7 +158,7 @@ def key_transform_numeric_lookup_mixin(self, compiler, connection):
     lhs = process_lhs(self, compiler, connection)
     # Check if the type of lhs is not "missing" or "null".
     not_missing_or_null = {"$not": {"$in": [{"$type": lhs}, ["missing", "null"]]}}
-    warnings.warn("You're using $not, index will not be used.", IndexNotUsedWarning, stacklevel=4)
+    warnings.warn("You're using $not, index will not be used.", IndexNotUsedWarning, stacklevel=1)
     return {"$and": [expr, not_missing_or_null]}
 
 

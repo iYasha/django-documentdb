@@ -88,7 +88,7 @@ def f(self, compiler, connection):  # noqa: ARG001
 
 
 def negated_expression(self, compiler, connection):
-    warnings.warn("You're using $not, index will not be used.", IndexNotUsedWarning, stacklevel=4)
+    warnings.warn("You're using $not, index will not be used.", IndexNotUsedWarning, stacklevel=1)
 
     return {"$not": expression_wrapper(self, compiler, connection)}
 

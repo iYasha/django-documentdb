@@ -125,6 +125,27 @@ Congratulations, your project is ready to go!
 
 ## Notes on Django QuerySets
 
+django-documentdb uses own QuerySet implementation (`DocumentQuerySet`) if you inherit your models from `DocumentModel` class.
+
+### Example:
+```python
+from django_mongodb.models import DocumentModel
+from django_mongodb import fields
+from django.db import models
+
+
+class TestModel(DocumentModel):
+    _id = fields.ObjectIdAutoField(primary_key=True)
+    text_value = models.CharField(max_length=100, null=True)
+    number_value = models.FloatField(null=True)
+
+    class Meta:
+        db_table = "test_db"
+        use_mongodb = True
+```
+
+### Available options with `DocumentQuerySet`:
+
 * `QuerySet.explain()` supports the [`comment` and `verbosity` options](
   https://www.mongodb.com/docs/manual/reference/command/explain/#command-fields).
 
@@ -132,6 +153,7 @@ Congratulations, your project is ready to go!
 
    Valid values for `verbosity` are `"queryPlanner"` (default),
    `"executionStats"`, and `"allPlansExecution"`.
+* `DocumentQuerySet.index_hint(index_name)` - allows to specify index hint for query.
 
 ## Known issues and limitations
 

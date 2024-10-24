@@ -125,5 +125,9 @@ class DocumentDBIncompatibleWarning(Warning):
     pass
 
 
-class IndexNotUsedWarning(DocumentDBIncompatibleWarning):
+class NotOptimalOperationWarning(Warning):
+    pass
+
+
+class IndexNotUsedWarning(DocumentDBIncompatibleWarning, NotOptimalOperationWarning):
     pass

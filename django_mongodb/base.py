@@ -88,7 +88,7 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         if b:
             return {a: None}
 
-        warnings.warn("You're using $ne, index will not be used", IndexNotUsedWarning, stacklevel=4)
+        warnings.warn("You're using $ne, index will not be used", IndexNotUsedWarning, stacklevel=1)
         return {a: {"$ne": None}}
 
     mongo_operators = {
@@ -105,11 +105,11 @@ class DatabaseWrapper(BaseDatabaseWrapper):
                 {"$or": [DatabaseWrapper._isnull_operator(b[1], True), {"$lte": [a, b[1]]}]},
             ]
         },
-        "iexact": lambda a, b: regex_match(a, ("^", b, {"$literal": "$"}), insensitive=True),
-        "startswith": lambda a, b: regex_match(a, ("^", b)),
-        "istartswith": lambda a, b: regex_match(a, ("^", b), insensitive=True),
-        "endswith": lambda a, b: regex_match(a, (b, {"$literal": "$"})),
-        "iendswith": lambda a, b: regex_match(a, (b, {"$literal": "$"}), insensitive=True),
+        "iexact": lambda a, b: regex_match(a, f"^{b}$", insensitive=True),
+        "startswith": lambda a, b: regex_match(a, f"^{b}"),
+        "istartswith": lambda a, b: regex_match(a, f"^{b}", insensitive=True),
+        "endswith": lambda a, b: regex_match(a, f"{b}$"),
+        "iendswith": lambda a, b: regex_match(a, f"{b}$", insensitive=True),
         "contains": lambda a, b: regex_match(a, b),
         "icontains": lambda a, b: regex_match(a, b, insensitive=True),
         "regex": lambda a, b: regex_match(a, b),

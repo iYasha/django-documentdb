@@ -606,9 +606,13 @@ class SQLCompiler(compiler.SQLCompiler):
         for option in self.connection.ops.explain_options:
             if value := options.get(option):
                 kwargs[option] = value
+
+        explain_params = {"aggregate": self.collection_name, "pipeline": pipeline, "cursor": {}}
+        if hasattr(self.query, "_index_hint"):
+            explain_params["hint"] = self.query._index_hint
         explain = self.connection.database.command(
             "explain",
-            {"aggregate": self.collection_name, "pipeline": pipeline, "cursor": {}},
+            explain_params,
             **kwargs,
         )
         # Generate the output: a list of lines that Django joins with newlines.
