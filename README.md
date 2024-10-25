@@ -1,4 +1,4 @@
-# MongoDB backend for Django
+# DocumentDB/MongoDB backend for Django
 
 This backend is in currently in development and is not advised for Production workflows. Backwards incompatible
 changes may be made without notice. We welcome your feedback as we continue to
@@ -6,9 +6,9 @@ explore and build. The best way to share this is via our [MongoDB Community Foru
 
 ## Install and usage
 
-The development version of this package supports Django 5.0.x. To install it:
-
-`pip install git+https://github.com/mongodb-labs/django-mongodb`
+```bash
+pip install django-documentdb
+```
 
 ### Specifying the default primary key field
 
