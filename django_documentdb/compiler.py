@@ -530,11 +530,7 @@ class SQLCompiler(compiler.SQLCompiler):
         for name, expr in columns + (ordering or ()):
             collection = expr.alias if isinstance(expr, Col) else None
             try:
-                if (
-                    isinstance(expr, Col)
-                    and name == expr.target.column
-                    and not force_expression
-                ):
+                if isinstance(expr, Col) and name == expr.target.column and not force_expression:
                     fields[collection][name] = 1
                 elif isinstance(expr, Col):
                     fields[collection][name] = f"${expr.as_mql(self, self.connection)}"

@@ -26,7 +26,7 @@ $ django-admin startproject mysite --template https://github.com/mongodb-labs/dj
 This template includes the following line in `settings.py`:
 
 ```python
-DEFAULT_AUTO_FIELD = "django_mongodb.fields.ObjectIdAutoField"
+DEFAULT_AUTO_FIELD = "django_documentdb.fields.ObjectIdAutoField"
 ```
 
 But this setting won't override any apps that have an `AppConfig` that
@@ -42,15 +42,15 @@ from django.contrib.contenttypes.apps import ContentTypesConfig
 
 
 class MongoAdminConfig(AdminConfig):
-    default_auto_field = "django_mongodb.fields.ObjectIdAutoField"
+    default_auto_field = "django_documentdb.fields.ObjectIdAutoField"
 
 
 class MongoAuthConfig(AuthConfig):
-    default_auto_field = "django_mongodb.fields.ObjectIdAutoField"
+    default_auto_field = "django_documentdb.fields.ObjectIdAutoField"
 
 
 class MongoContentTypesConfig(ContentTypesConfig):
-    default_auto_field = "django_mongodb.fields.ObjectIdAutoField"
+    default_auto_field = "django_documentdb.fields.ObjectIdAutoField"
 ```
 
 Each app reference in the `INSTALLED_APPS` setting must point to the
@@ -109,7 +109,7 @@ to this:
 ```python
 DATABASES = {
     "default": {
-        "ENGINE": "django_mongodb",
+        "ENGINE": "django_documentdb",
         "NAME": "my_database",
         "USER": "my_user",
         "PASSWORD": "my_password",
@@ -128,9 +128,10 @@ Congratulations, your project is ready to go!
 django-documentdb uses own QuerySet implementation (`DocumentQuerySet`) if you inherit your models from `DocumentModel` class.
 
 ### Example:
+
 ```python
-from django_mongodb.models import DocumentModel
-from django_mongodb import fields
+from django_documentdb.models import DocumentModel
+from django_documentdb import fields
 from django.db import models
 
 

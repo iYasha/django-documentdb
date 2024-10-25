@@ -4,7 +4,7 @@ from django.core.exceptions import FullResultSet
 from django.db.models.aggregates import Aggregate
 from django.db.models.expressions import Value
 
-from django_mongodb.utils import NotOptimalOperationWarning
+from django_documentdb.utils import NotOptimalOperationWarning
 
 
 def is_direct_value(node):

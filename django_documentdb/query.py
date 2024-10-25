@@ -14,8 +14,8 @@ from django.db.models.sql.where import AND, OR, XOR, ExtraWhere, NothingNode, Wh
 from pymongo.errors import BulkWriteError, DuplicateKeyError, PyMongoError
 
 if typing.TYPE_CHECKING:
-    from django_mongodb.compiler import SQLCompiler
-from django_mongodb.utils import IndexNotUsedWarning
+    from django_documentdb.compiler import SQLCompiler
+from django_documentdb.utils import IndexNotUsedWarning
 
 
 def wrap_database_errors(func):

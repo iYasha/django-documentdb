@@ -25,7 +25,7 @@ from django.db.models.expressions import (
 )
 from django.db.models.sql import Query
 
-from django_mongodb.utils import IndexNotUsedWarning
+from django_documentdb.utils import IndexNotUsedWarning
 
 
 def case(self, compiler, connection):
