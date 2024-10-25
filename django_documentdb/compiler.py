@@ -718,7 +718,7 @@ class SQLUpdateCompiler(compiler.SQLUpdateCompiler, SQLCompiler):
         except EmptyResultSet:
             return 0
         is_empty = not bool(values)
-        rows = 0 if is_empty else self.update(criteria, [{"$set": values}])
+        rows = 0 if is_empty else self.update(criteria, {"$set": values})
         for query in self.query.get_related_updates():
             aux_rows = query.get_compiler(self.using).execute_sql(result_type)
             if is_empty and aux_rows:
