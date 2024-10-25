@@ -185,20 +185,7 @@ class SQLCompiler(compiler.SQLCompiler):
         pipeline = []
         if not ids:
             group["_id"] = None
-            pipeline.append({"$facet": {"group": [{"$group": group}]}})
-            pipeline.append(
-                {
-                    "$addFields": {
-                        key: {
-                            "$getField": {
-                                "input": {"$arrayElemAt": ["$group", 0]},
-                                "field": key,
-                            }
-                        }
-                        for key in group
-                    }
-                }
-            )
+            pipeline.append({"$group": group})
         else:
             group["_id"] = ids
             pipeline.append({"$group": group})
@@ -220,6 +207,7 @@ class SQLCompiler(compiler.SQLCompiler):
             all_replacements.update(replacements)
             pipeline = self._build_aggregation_pipeline(ids, group)
             if self.having:
+                # TODO: Check if having works correctly.
                 having = self.having.replace_expressions(all_replacements).as_mql(
                     self, self.connection
                 )
@@ -388,7 +376,7 @@ class SQLCompiler(compiler.SQLCompiler):
             except FullResultSet:
                 query.mongo_query = {}
             else:
-                query.mongo_query = {"$expr": expr}
+                query.mongo_query = expr
         if extra_fields:
             query.extra_fields = self.get_project_fields(extra_fields, force_expression=True)
         query.subqueries = self.subqueries
@@ -542,13 +530,13 @@ class SQLCompiler(compiler.SQLCompiler):
         for name, expr in columns + (ordering or ()):
             collection = expr.alias if isinstance(expr, Col) else None
             try:
-                fields[collection][name] = (
-                    1
-                    # For brevity/simplicity, project {"field_name": 1}
-                    # instead of {"field_name": "$field_name"}.
-                    if isinstance(expr, Col) and name == expr.target.column and not force_expression
-                    else expr.as_mql(self, self.connection)
-                )
+                if isinstance(expr, Col) and name == expr.target.column and not force_expression:
+                    fields[collection][name] = 1
+                elif isinstance(expr, Col):
+                    fields[collection][name] = f"${expr.as_mql(self, self.connection)}"
+                else:
+                    fields[collection][name] = expr.as_mql(self, self.connection)
+
             except EmptyResultSet:
                 empty_result_set_value = getattr(expr, "empty_result_set_value", NotImplemented)
                 value = (
@@ -618,9 +606,13 @@ class SQLCompiler(compiler.SQLCompiler):
         for option in self.connection.ops.explain_options:
             if value := options.get(option):
                 kwargs[option] = value
+
+        explain_params = {"aggregate": self.collection_name, "pipeline": pipeline, "cursor": {}}
+        if hasattr(self.query, "_index_hint"):
+            explain_params["hint"] = self.query._index_hint
         explain = self.connection.database.command(
             "explain",
-            {"aggregate": self.collection_name, "pipeline": pipeline, "cursor": {}},
+            explain_params,
             **kwargs,
         )
         # Generate the output: a list of lines that Django joins with newlines.

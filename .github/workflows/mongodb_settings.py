@@ -1,14 +1,14 @@
 DATABASES = {
     "default": {
-        "ENGINE": "django_mongodb",
+        "ENGINE": "django_documentdb",
         "NAME": "djangotests",
     },
     "other": {
-        "ENGINE": "django_mongodb",
+        "ENGINE": "django_documentdb",
         "NAME": "djangotests-other",
     },
 }
-DEFAULT_AUTO_FIELD = "django_mongodb.fields.ObjectIdAutoField"
+DEFAULT_AUTO_FIELD = "django_documentdb.fields.ObjectIdAutoField"
 PASSWORD_HASHERS = ("django.contrib.auth.hashers.MD5PasswordHasher",)
 SECRET_KEY = "django_tests_secret_key"
 USE_TZ = False

@@ -1,3 +1,7 @@
+This is a fork of the django-mongodb repository, originally maintained by mongodb-labs. This THIRD-PARTY-NOTICES file is included in accordance with the Apache License 2.0, retaining original attributions. Compatibility modifications have been made to support AWS DocumentDB.
+
+---
+
 django-mongodb uses third-party libraries or other resources that may
 be distributed under licenses different than this software.
 

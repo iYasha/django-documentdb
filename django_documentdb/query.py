@@ -1,3 +1,5 @@
+import typing
+import warnings
 from functools import reduce, wraps
 from operator import add as add_operator
 
@@ -10,6 +12,10 @@ from django.db.models.sql.constants import INNER
 from django.db.models.sql.datastructures import Join
 from django.db.models.sql.where import AND, OR, XOR, ExtraWhere, NothingNode, WhereNode
 from pymongo.errors import BulkWriteError, DuplicateKeyError, PyMongoError
+
+if typing.TYPE_CHECKING:
+    from django_documentdb.compiler import SQLCompiler
+from django_documentdb.utils import IndexNotUsedWarning
 
 
 def wrap_database_errors(func):
@@ -40,7 +46,7 @@ class MongoQuery:
     built by Django to a "representation" more suitable for MongoDB.
     """
 
-    def __init__(self, compiler):
+    def __init__(self, compiler: "SQLCompiler"):
         self.compiler = compiler
         self.connection = compiler.connection
         self.ops = compiler.connection.ops
@@ -76,7 +82,11 @@ class MongoQuery:
         Return a pymongo CommandCursor that can be iterated on to give the
         results of the query.
         """
-        return self.collection.aggregate(self.get_pipeline())
+        pipeline = self.get_pipeline()
+        options = {}
+        if hasattr(self.query, "_index_hint"):
+            options["hint"] = self.query._index_hint
+        return self.collection.aggregate(pipeline, **options)
 
     def get_pipeline(self):
         pipeline = []
@@ -297,6 +307,10 @@ def where_node(self, compiler, connection):
         raise FullResultSet
 
     if self.negated and mql:
+        warnings.warn(
+            "You're using $not, index will not be used.", IndexNotUsedWarning, stacklevel=1
+        )
+
         mql = {"$not": mql}
 
     return mql

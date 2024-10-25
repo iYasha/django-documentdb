@@ -28,7 +28,7 @@ def aggregate(
     if resolve_inner_expression:
         return lhs_mql
     operator = operator or MONGO_AGGREGATIONS.get(self.__class__, self.function.lower())
-    return {f"${operator}": lhs_mql}
+    return {f"${operator}": f"${lhs_mql}"}
 
 
 def count(self, compiler, connection, resolve_inner_expression=False, **extra_context):  # noqa: ARG001

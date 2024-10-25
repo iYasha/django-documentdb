@@ -1,6 +1,10 @@
+import warnings
+
 from django.core.exceptions import FullResultSet
 from django.db.models.aggregates import Aggregate
 from django.db.models.expressions import Value
+
+from django_documentdb.utils import NotOptimalOperationWarning
 
 
 def is_direct_value(node):
@@ -46,7 +50,13 @@ def process_rhs(node, compiler, connection):
     return connection.ops.prep_lookup_value(value, node.lhs.output_field, node.lookup_name)
 
 
-def regex_match(field, regex_vals, insensitive=False):
-    regex = {"$concat": regex_vals} if isinstance(regex_vals, tuple) else regex_vals
+def regex_match(field, regex: str, insensitive=False):
+    warnings.warn(
+        "It's better to use hint with regex operations.\n"
+        "See https://docs.aws.amazon.com/documentdb/latest/developerguide/functional-differences.html"
+        "#functional-differences.regex-indexing for more details.",
+        stacklevel=1,
+        category=NotOptimalOperationWarning,
+    )
     options = "i" if insensitive else ""
-    return {"$regexMatch": {"input": {"$toString": field}, "regex": regex, "options": options}}
+    return {field: {"$regex": regex, "$options": options}}

@@ -1,4 +1,5 @@
 import datetime
+import warnings
 from decimal import Decimal
 from uuid import UUID
 
@@ -23,6 +24,8 @@ from django.db.models.expressions import (
     When,
 )
 from django.db.models.sql import Query
+
+from django_documentdb.utils import IndexNotUsedWarning
 
 
 def case(self, compiler, connection):
@@ -62,16 +65,20 @@ def col(self, compiler, connection):  # noqa: ARG001
         except KeyError:
             index = len(compiler.column_indices)
             compiler.column_indices[self] = index
-        return f"$${compiler.PARENT_FIELD_TEMPLATE.format(index)}"
+        return f"$${compiler.PARENT_FIELD_TEMPLATE.format(index)}"  # TODO: Potential bug
     # Add the column's collection's alias for columns in joined collections.
     prefix = f"{self.alias}." if self.alias != compiler.collection_name else ""
-    return f"${prefix}{self.target.column}"
+    return f"{prefix}{self.target.column}"
 
 
 def combined_expression(self, compiler, connection):
     expressions = [
-        self.lhs.as_mql(compiler, connection),
-        self.rhs.as_mql(compiler, connection),
+        f"${self.lhs.as_mql(compiler, connection)}"
+        if isinstance(self.lhs, Col)
+        else self.lhs.as_mql(compiler, connection),
+        f"${self.rhs.as_mql(compiler, connection)}"
+        if isinstance(self.rhs, Col)
+        else self.rhs.as_mql(compiler, connection),
     ]
     return connection.ops.combine_expression(self.connector, expressions)
 
@@ -85,6 +92,8 @@ def f(self, compiler, connection):  # noqa: ARG001
 
 
 def negated_expression(self, compiler, connection):
+    warnings.warn("You're using $not, index will not be used.", IndexNotUsedWarning, stacklevel=1)
+
     return {"$not": expression_wrapper(self, compiler, connection)}
 
 

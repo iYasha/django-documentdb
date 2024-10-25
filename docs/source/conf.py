@@ -9,10 +9,10 @@ from __future__ import annotations
 
 from importlib.metadata import version as _version
 
-project = "django_mongodb"
+project = "django_documentdb"
 copyright = "2024, The MongoDB Python Team"
 author = "The MongoDB Python Team"
-release = _version("django_mongodb")
+release = _version("django_documentdb")
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

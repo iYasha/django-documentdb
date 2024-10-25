@@ -1,4 +1,4 @@
-# MongoDB backend for Django
+# DocumentDB/MongoDB backend for Django
 
 This backend is in currently in development and is not advised for Production workflows. Backwards incompatible
 changes may be made without notice. We welcome your feedback as we continue to
@@ -6,9 +6,9 @@ explore and build. The best way to share this is via our [MongoDB Community Foru
 
 ## Install and usage
 
-The development version of this package supports Django 5.0.x. To install it:
-
-`pip install git+https://github.com/mongodb-labs/django-mongodb`
+```bash
+pip install django-documentdb
+```
 
 ### Specifying the default primary key field
 
@@ -26,7 +26,7 @@ $ django-admin startproject mysite --template https://github.com/mongodb-labs/dj
 This template includes the following line in `settings.py`:
 
 ```python
-DEFAULT_AUTO_FIELD = "django_mongodb.fields.ObjectIdAutoField"
+DEFAULT_AUTO_FIELD = "django_documentdb.fields.ObjectIdAutoField"
 ```
 
 But this setting won't override any apps that have an `AppConfig` that
@@ -42,15 +42,15 @@ from django.contrib.contenttypes.apps import ContentTypesConfig
 
 
 class MongoAdminConfig(AdminConfig):
-    default_auto_field = "django_mongodb.fields.ObjectIdAutoField"
+    default_auto_field = "django_documentdb.fields.ObjectIdAutoField"
 
 
 class MongoAuthConfig(AuthConfig):
-    default_auto_field = "django_mongodb.fields.ObjectIdAutoField"
+    default_auto_field = "django_documentdb.fields.ObjectIdAutoField"
 
 
 class MongoContentTypesConfig(ContentTypesConfig):
-    default_auto_field = "django_mongodb.fields.ObjectIdAutoField"
+    default_auto_field = "django_documentdb.fields.ObjectIdAutoField"
 ```
 
 Each app reference in the `INSTALLED_APPS` setting must point to the
@@ -109,7 +109,7 @@ to this:
 ```python
 DATABASES = {
     "default": {
-        "ENGINE": "django_mongodb",
+        "ENGINE": "django_documentdb",
         "NAME": "my_database",
         "USER": "my_user",
         "PASSWORD": "my_password",
@@ -125,6 +125,28 @@ Congratulations, your project is ready to go!
 
 ## Notes on Django QuerySets
 
+django-documentdb uses own QuerySet implementation (`DocumentQuerySet`) if you inherit your models from `DocumentModel` class.
+
+### Example:
+
+```python
+from django_documentdb.models import DocumentModel
+from django_documentdb import fields
+from django.db import models
+
+
+class TestModel(DocumentModel):
+    _id = fields.ObjectIdAutoField(primary_key=True)
+    text_value = models.CharField(max_length=100, null=True)
+    number_value = models.FloatField(null=True)
+
+    class Meta:
+        db_table = "test_db"
+        use_mongodb = True
+```
+
+### Available options with `DocumentQuerySet`:
+
 * `QuerySet.explain()` supports the [`comment` and `verbosity` options](
   https://www.mongodb.com/docs/manual/reference/command/explain/#command-fields).
 
@@ -132,6 +154,7 @@ Congratulations, your project is ready to go!
 
    Valid values for `verbosity` are `"queryPlanner"` (default),
    `"executionStats"`, and `"allPlansExecution"`.
+* `DocumentQuerySet.index_hint(index_name)` - allows to specify index hint for query.
 
 ## Known issues and limitations
 
@@ -181,6 +204,6 @@ Congratulations, your project is ready to go!
 - Due to the lack of ability to introspect MongoDB collection schema,
   `migrate --fake-initial` isn't supported.
 
-## Troubleshooting
+## Forked Project
 
-TODO
+This project, **django-documentdb**, is a fork of the original **django-mongodb** library, which aimed to integrate MongoDB with Django. The fork was created to enhance compatibility with AWS DocumentDB, addressing the limitations of its API support while maintaining the core functionalities of the original library. We appreciate the work of the MongoDB Python Team and aim to build upon their foundation to better serve users needing DocumentDB integration.

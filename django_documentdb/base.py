@@ -1,3 +1,5 @@
+import warnings
+
 from django.db.backends.base.base import BaseDatabaseWrapper
 from django.db.backends.signals import connection_created
 from pymongo.collection import Collection
@@ -11,7 +13,7 @@ from .introspection import DatabaseIntrospection
 from .operations import DatabaseOperations
 from .query_utils import regex_match
 from .schema import DatabaseSchemaEditor
-from .utils import OperationDebugWrapper
+from .utils import IndexNotUsedWarning, OperationDebugWrapper
 
 
 class Cursor:
@@ -83,23 +85,19 @@ class DatabaseWrapper(BaseDatabaseWrapper):
     }
 
     def _isnull_operator(a, b):
-        is_null = {
-            "$or": [
-                # The path does not exist (i.e. is "missing")
-                {"$eq": [{"$type": a}, "missing"]},
-                # or the value is None.
-                {"$eq": [a, None]},
-            ]
-        }
-        return is_null if b else {"$not": is_null}
+        if b:
+            return {a: None}
+
+        warnings.warn("You're using $ne, index will not be used", IndexNotUsedWarning, stacklevel=1)
+        return {a: {"$ne": None}}
 
     mongo_operators = {
-        "exact": lambda a, b: {"$eq": [a, b]},
-        "gt": lambda a, b: {"$gt": [a, b]},
-        "gte": lambda a, b: {"$gte": [a, b]},
-        "lt": lambda a, b: {"$lt": [a, b]},
-        "lte": lambda a, b: {"$lte": [a, b]},
-        "in": lambda a, b: {"$in": [a, b]},
+        "exact": lambda field_name, value: {field_name: value},
+        "gt": lambda field_name, value: {field_name: {"$gt": value}},
+        "gte": lambda field_name, value: {field_name: {"$gte": value}},
+        "lt": lambda field_name, value: {field_name: {"$lt": value}},
+        "lte": lambda field_name, value: {field_name: {"$lte": value}},
+        "in": lambda a, b: {a: {"$in": b}},
         "isnull": _isnull_operator,
         "range": lambda a, b: {
             "$and": [
@@ -107,11 +105,11 @@ class DatabaseWrapper(BaseDatabaseWrapper):
                 {"$or": [DatabaseWrapper._isnull_operator(b[1], True), {"$lte": [a, b[1]]}]},
             ]
         },
-        "iexact": lambda a, b: regex_match(a, ("^", b, {"$literal": "$"}), insensitive=True),
-        "startswith": lambda a, b: regex_match(a, ("^", b)),
-        "istartswith": lambda a, b: regex_match(a, ("^", b), insensitive=True),
-        "endswith": lambda a, b: regex_match(a, (b, {"$literal": "$"})),
-        "iendswith": lambda a, b: regex_match(a, (b, {"$literal": "$"}), insensitive=True),
+        "iexact": lambda a, b: regex_match(a, f"^{b}$", insensitive=True),
+        "startswith": lambda a, b: regex_match(a, f"^{b}"),
+        "istartswith": lambda a, b: regex_match(a, f"^{b}", insensitive=True),
+        "endswith": lambda a, b: regex_match(a, f"{b}$"),
+        "iendswith": lambda a, b: regex_match(a, f"{b}$", insensitive=True),
         "contains": lambda a, b: regex_match(a, b),
         "icontains": lambda a, b: regex_match(a, b, insensitive=True),
         "regex": lambda a, b: regex_match(a, b),

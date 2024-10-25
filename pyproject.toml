@@ -3,18 +3,20 @@ requires = ["setuptools>=65.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "django-mongodb"
+name = "django-documentdb"
 dynamic = ["version"]
-description = "MongoDB backend for Django"
+description = "DocumentDB/MongoDB backend for Django"
 readme = "README.md"
 license = {file="LICENSE"}
 requires-python = ">=3.10"
 authors = [
-    { name = "The MongoDB Python Team" },
+    { name = "The MongoDB Python Team" }, # Original authors of django-mongodb
+    { name = "iYasha" }, # Forked for DocumentDB compatibility
 ]
 keywords = [
     "mongo",
     "mongodb",
+    "documentdb",
     "pymongo",
     "django"
 ]
@@ -42,11 +44,11 @@ docs = [ "sphinx>=7"]
 [project.urls]
 Homepage = "https://www.mongodb.org"
 Documentation = "https://django-mongodb.readthedocs.io"
-Source = "https://github.com/mongodb-labs/django-mongodb"
-Tracker = "https://github.com/mongodb-labs/django-mongodb/issues"
+Source = "https://github.com/iYasha/django-documentdb"
+Tracker = "https://github.com/iYasha/django-documentdb/issues"
 
 [tool.setuptools.dynamic]
-version = {attr = "django_mongodb.__version__"}
+version = {attr = "django_documentdb.__version__"}
 
 [tool.mypy]
 strict = true
