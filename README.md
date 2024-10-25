@@ -204,6 +204,6 @@ class TestModel(DocumentModel):
 - Due to the lack of ability to introspect MongoDB collection schema,
   `migrate --fake-initial` isn't supported.
 
-## Troubleshooting
+## Forked Project
 
-TODO
+This project, **django-documentdb**, is a fork of the original **django-mongodb** library, which aimed to integrate MongoDB with Django. The fork was created to enhance compatibility with AWS DocumentDB, addressing the limitations of its API support while maintaining the core functionalities of the original library. We appreciate the work of the MongoDB Python Team and aim to build upon their foundation to better serve users needing DocumentDB integration.
