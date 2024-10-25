@@ -49,10 +49,8 @@ def count(self, compiler, connection, resolve_inner_expression=False, **extra_co
             inner_expression = process_lhs(node, compiler, connection)
         else:
             lhs_mql = process_lhs(self, compiler, connection)
-            null_cond = {"$in": [{"$type": f"${lhs_mql}"}, ["missing", "null"]]}
-            inner_expression = {
-                "$cond": {"if": null_cond, "then": None, "else": lhs_mql if self.distinct else 1}
-            }
+            null_cond = {"$in": [{"$type": lhs_mql}, ["missing", "null"]]}
+            inner_expression = {"$cond": {"if": null_cond, "then": None, "else": lhs_mql if self.distinct else 1}}
         if resolve_inner_expression:
             return inner_expression
         return {"$sum": inner_expression}
