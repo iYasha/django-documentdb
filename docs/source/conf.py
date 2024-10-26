@@ -7,11 +7,9 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 from __future__ import annotations
 
-import os
-import sys
 from importlib.metadata import version as _version
 
-sys.path.insert(0, os.path.abspath("../../"))  # Adjust as needed
+# sys.path.insert(0, os.path.abspath("../../"))  # Adjust as needed
 
 project = "django_documentdb"
 copyright = "2024, iYasha"
