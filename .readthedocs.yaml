@@ -9,11 +9,6 @@ python:
     - path: .
 
 # Optional settings
-readthedocs:
-  version: latest  # Specify the version to build
-  python: 3.11  # Specify the Python version to use
-
-# Build settings
 build:
   os: ubuntu-22.04  # Operating system
   tools:
