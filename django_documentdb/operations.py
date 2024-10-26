@@ -8,9 +8,7 @@ from bson.decimal128 import Decimal128
 from django.conf import settings
 from django.db import DataError
 from django.db.backends.base.operations import BaseDatabaseOperations
-from django.db.models import TextField
 from django.db.models.expressions import Combinable
-from django.db.models.functions import Cast
 from django.utils import timezone
 from django.utils.regex_helper import _lazy_re_compile
 
@@ -218,12 +216,8 @@ class DatabaseOperations(BaseDatabaseOperations):
         lhs_expr, rhs_expr = super().prepare_join_on_clause(
             lhs_table, lhs_field, rhs_table, rhs_field
         )
-        # If the types are different, cast both to string.
-        if lhs_field.db_type(self.connection) != rhs_field.db_type(self.connection):
-            if lhs_field.db_type(self.connection) != "string":
-                lhs_expr = Cast(lhs_expr, output_field=TextField())
-            if rhs_field.db_type(self.connection) != "string":
-                rhs_expr = Cast(rhs_expr, output_field=TextField())
+        # In old version of $lookup we should reference the field names directly
+        # instead of trying to convert them in the $lookup.
         return lhs_expr, rhs_expr
 
     """Django uses these methods to generate SQL queries before it generates MQL queries."""

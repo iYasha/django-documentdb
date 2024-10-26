@@ -92,11 +92,12 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         return {a: {"$ne": None}}
 
     mongo_operators = {
-        "exact": lambda field_name, value: {field_name: value},
-        "gt": lambda field_name, value: {field_name: {"$gt": value}},
-        "gte": lambda field_name, value: {field_name: {"$gte": value}},
-        "lt": lambda field_name, value: {field_name: {"$lt": value}},
-        "lte": lambda field_name, value: {field_name: {"$lte": value}},
+        # Where a = field_name, b = value
+        "exact": lambda a, b: {a: b},
+        "gt": lambda a, b: {a: {"$gt": b}},
+        "gte": lambda a, b: {a: {"$gte": b}},
+        "lt": lambda a, b: {a: {"$lt": b}},
+        "lte": lambda a, b: {a: {"$lte": b}},
         "in": lambda a, b: {a: {"$in": b}},
         "isnull": _isnull_operator,
         "range": lambda a, b: {

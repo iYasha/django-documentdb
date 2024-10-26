@@ -15,5 +15,4 @@ class DocumentModel(models.Model):
 
     class Meta:
         abstract = True
-        use_mongodb = True
         db_table = None

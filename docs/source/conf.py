@@ -10,8 +10,8 @@ from __future__ import annotations
 from importlib.metadata import version as _version
 
 project = "django_documentdb"
-copyright = "2024, The MongoDB Python Team"
-author = "The MongoDB Python Team"
+copyright = "2024, iYasha"
+author = "iYasha"
 release = _version("django_documentdb")
 
 # -- General configuration ---------------------------------------------------

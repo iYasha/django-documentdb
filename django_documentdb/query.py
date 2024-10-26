@@ -5,7 +5,7 @@ from operator import add as add_operator
 
 from django.core.exceptions import EmptyResultSet, FullResultSet
 from django.db import DatabaseError, IntegrityError, NotSupportedError
-from django.db.models.expressions import Case, Col, When
+from django.db.models.expressions import Case, When
 from django.db.models.functions import Mod
 from django.db.models.lookups import Exact
 from django.db.models.sql.constants import INNER
@@ -14,6 +14,7 @@ from django.db.models.sql.where import AND, OR, XOR, ExtraWhere, NothingNode, Wh
 from pymongo.errors import BulkWriteError, DuplicateKeyError, PyMongoError
 
 if typing.TYPE_CHECKING:
+    from django_documentdb.base import DatabaseWrapper
     from django_documentdb.compiler import SQLCompiler
 from django_documentdb.utils import IndexNotUsedWarning
 
@@ -138,90 +139,38 @@ def extra_where(self, compiler, connection):  # noqa: ARG001
     raise NotSupportedError("QuerySet.extra() is not supported on MongoDB.")
 
 
-def join(self, compiler, connection):
-    lookup_pipeline = []
+def join(self: Join, compiler: "SQLCompiler", connection: "DatabaseWrapper"):
     lhs_fields = []
     rhs_fields = []
+
     # Add a join condition for each pair of joining fields.
-    parent_template = "parent__field__"
     for lhs, rhs in self.join_fields:
         lhs, rhs = connection.ops.prepare_join_on_clause(
             self.parent_alias, lhs, compiler.collection_name, rhs
         )
         lhs_fields.append(lhs.as_mql(compiler, connection))
-        # In the lookup stage, the reference to this column doesn't include
-        # the collection name.
         rhs_fields.append(rhs.as_mql(compiler, connection))
-    # Handle any join conditions besides matching field pairs.
-    extra = self.join_field.get_extra_restriction(self.table_alias, self.parent_alias)
-    if extra:
-        columns = []
-        for expr in extra.leaves():
-            # Determine whether the column needs to be transformed or rerouted
-            # as part of the subquery.
-            for hand_side in ["lhs", "rhs"]:
-                hand_side_value = getattr(expr, hand_side, None)
-                if isinstance(hand_side_value, Col):
-                    # If the column is not part of the joined table, add it to
-                    # lhs_fields.
-                    if hand_side_value.alias != self.table_alias:
-                        pos = len(lhs_fields)
-                        lhs_fields.append(expr.lhs.as_mql(compiler, connection))
-                    else:
-                        pos = None
-                    columns.append((hand_side_value, pos))
-        # Replace columns in the extra conditions with new column references
-        # based on their rerouted positions in the join pipeline.
-        replacements = {}
-        for col, parent_pos in columns:
-            column_target = Col(compiler.collection_name, expr.output_field.__class__())
-            if parent_pos is not None:
-                target_col = f"${parent_template}{parent_pos}"
-                column_target.target.db_column = target_col
-                column_target.target.set_attributes_from_name(target_col)
-            else:
-                column_target.target = col.target
-            replacements[col] = column_target
-        # Apply the transformed expressions in the extra condition.
-        extra_condition = [extra.replace_expressions(replacements).as_mql(compiler, connection)]
-    else:
-        extra_condition = []
 
+    # Create lookups for each pair of fields.
     lookup_pipeline = [
         {
             "$lookup": {
-                # The right-hand table to join.
-                "from": self.table_name,
-                # The pipeline variables to be matched in the pipeline's
-                # expression.
-                "let": {
-                    f"{parent_template}{i}": parent_field
-                    for i, parent_field in enumerate(lhs_fields)
-                },
-                "pipeline": [
-                    {
-                        # Match the conditions:
-                        #   self.table_name.field1 = parent_table.field1
-                        # AND
-                        #   self.table_name.field2 = parent_table.field2
-                        # AND
-                        #   ...
-                        "$match": {
-                            "$expr": {
-                                "$and": [
-                                    {"$eq": [f"$${parent_template}{i}", field]}
-                                    for i, field in enumerate(rhs_fields)
-                                ]
-                                + extra_condition
-                            }
-                        }
-                    }
-                ],
-                # Rename the output as table_alias.
-                "as": self.table_alias,
+                "from": self.table_name,  # The right-hand table to join.
+                "localField": lhs_field,  # Field from the main collection.
+                "foreignField": rhs_field,  # Field from the joined collection.
+                "as": self.table_alias,  # Output array field.
             }
-        },
+        }
+        for lhs_field, rhs_field in zip(lhs_fields, rhs_fields, strict=True)
     ]
+
+    # Handle any extra conditions if applicable
+    if self.join_field.get_extra_restriction(self.table_alias, self.parent_alias):
+        extra_condition = self.join_field.get_extra_restriction(
+            self.table_alias, self.parent_alias
+        ).as_mql(compiler, connection)
+        lookup_pipeline.append({"$match": extra_condition})
+
     # To avoid missing data when using $unwind, an empty collection is added if
     # the join isn't an inner join. For inner joins, rows with empty arrays are
     # removed, as $unwind unrolls or unnests the array and removes the row if
@@ -230,7 +179,7 @@ def join(self, compiler, connection):
     if self.join_type != INNER:
         lookup_pipeline.append(
             {
-                "$set": {
+                "$addFields": {
                     self.table_alias: {
                         "$cond": {
                             "if": {
@@ -246,7 +195,16 @@ def join(self, compiler, connection):
                 }
             }
         )
-    lookup_pipeline.append({"$unwind": f"${self.table_alias}"})
+
+    lookup_pipeline.append(
+        {
+            "$unwind": {
+                "path": f"${self.table_alias}",
+                "preserveNullAndEmptyArrays": True,  # Preserve documents without matches
+            }
+        }
+    )
+
     return lookup_pipeline
 
 
