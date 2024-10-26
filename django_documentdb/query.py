@@ -14,6 +14,7 @@ from django.db.models.sql.where import AND, OR, XOR, ExtraWhere, NothingNode, Wh
 from pymongo.errors import BulkWriteError, DuplicateKeyError, PyMongoError
 
 if typing.TYPE_CHECKING:
+    from django_documentdb.base import DatabaseWrapper
     from django_documentdb.compiler import SQLCompiler
 from django_documentdb.utils import IndexNotUsedWarning
 
@@ -138,8 +139,7 @@ def extra_where(self, compiler, connection):  # noqa: ARG001
     raise NotSupportedError("QuerySet.extra() is not supported on MongoDB.")
 
 
-def join(self, compiler, connection):
-    lookup_pipeline = []
+def join(self: Join, compiler: "SQLCompiler", connection: "DatabaseWrapper"):
     lhs_fields = []
     rhs_fields = []
 
@@ -152,27 +152,25 @@ def join(self, compiler, connection):
         rhs_fields.append(rhs.as_mql(compiler, connection))
 
     # Create lookups for each pair of fields.
-    for lhs_field, rhs_field in zip(lhs_fields, rhs_fields, strict=True):
-        lookup_pipeline.append(
-            {
-                "$lookup": {
-                    "from": self.table_name,  # The right-hand table to join.
-                    "localField": lhs_field,  # Field from the main collection.
-                    "foreignField": rhs_field,  # Field from the joined collection.
-                    "as": self.table_alias,  # Output array field.
-                }
+    lookup_pipeline = [
+        {
+            "$lookup": {
+                "from": self.table_name,  # The right-hand table to join.
+                "localField": lhs_field,  # Field from the main collection.
+                "foreignField": rhs_field,  # Field from the joined collection.
+                "as": self.table_alias,  # Output array field.
             }
-        )
-
-        # Add unwind stage if needed
-        lookup_pipeline.append(
-            {
-                "$unwind": {
-                    "path": f"${self.table_alias}",
-                    "preserveNullAndEmptyArrays": True,  # Preserve documents without matches
-                }
+        }
+        for lhs_field, rhs_field in zip(lhs_fields, rhs_fields, strict=True)
+    ]
+    lookup_pipeline.append(
+        {
+            "$unwind": {
+                "path": f"${self.table_alias}",
+                "preserveNullAndEmptyArrays": True,  # Preserve documents without matches
             }
-        )
+        }
+    )
 
     # Handle any extra conditions if applicable
     if self.join_field.get_extra_restriction(self.table_alias, self.parent_alias):
