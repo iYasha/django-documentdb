@@ -5,7 +5,7 @@ This project, **django-documentdb**, is a fork of the original **django-mongodb*
 We encourage users to provide feedback and report any issues as we continue to improve the library. You can share your thoughts, suggestions, or report problems on our [GitHub Issues page](https://github.com/iYasha/django-documentdb/issues)
 
 ## Documentation
-For full documentation, including installation, configuration, etc. Please see https://iyasha.github.io/django-documentdb/introduction.html
+For full documentation, including installation, configuration, etc. Please see https://django-documentdb.readthedocs.io/
 
 ## Installation
 
