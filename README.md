@@ -1,127 +1,31 @@
 # DocumentDB/MongoDB backend for Django
 
-This backend is in currently in development and is not advised for Production workflows. Backwards incompatible
-changes may be made without notice. We welcome your feedback as we continue to
-explore and build. The best way to share this is via our [MongoDB Community Forum](https://www.mongodb.com/community/forums/tag/python)
+This project, **django-documentdb**, is a fork of the original **django-mongodb** repository, which was developed and maintained by the MongoDB Python Team. The primary purpose of this fork is to enhance compatibility with **AWS DocumentDB**, a MongoDB-compatible database service provided by Amazon Web Services. To accommodate the differences between DocumentDB and MongoDB’s API support, specific adjustments have been implemented to ensure seamless functionality within DocumentDB.
 
-## Install and usage
+We encourage users to provide feedback and report any issues as we continue to improve the library. You can share your thoughts, suggestions, or report problems on our [GitHub Issues page](https://github.com/iYasha/django-documentdb/issues)
 
-```bash
-pip install django-documentdb
-```
+## Documentation
+For full documentation, including installation, configuration, etc. Please see https://iyasha.github.io/django-documentdb/introduction.html
 
-### Specifying the default primary key field
+## Installation
 
-In your Django settings, you must specify that all models should use
-`ObjectIdAutoField`.
+To install `django_documentdb`, use one of the following methods:
 
-You can create a new project that's configured based on these steps using a
-project template:
+### Using pip
+
+You can install `django_documentdb` with:
 
 ```bash
-$ django-admin startproject mysite --template https://github.com/mongodb-labs/django-mongodb-project/archive/refs/heads/5.0.x.zip
-```
-(where "5.0" matches the version of Django that you're using.)
-
-This template includes the following line in `settings.py`:
-
-```python
-DEFAULT_AUTO_FIELD = "django_documentdb.fields.ObjectIdAutoField"
+pip install django_documentdb
 ```
 
-But this setting won't override any apps that have an `AppConfig` that
-specifies `default_auto_field`. For those apps, you'll need to create a custom
-`AppConfig`.
+### Using Poetry
 
-For example, the project template includes `<project_name>/apps.py`:
-
-```python
-from django.contrib.admin.apps import AdminConfig
-from django.contrib.auth.apps import AuthConfig
-from django.contrib.contenttypes.apps import ContentTypesConfig
-
-
-class MongoAdminConfig(AdminConfig):
-    default_auto_field = "django_documentdb.fields.ObjectIdAutoField"
-
-
-class MongoAuthConfig(AuthConfig):
-    default_auto_field = "django_documentdb.fields.ObjectIdAutoField"
-
-
-class MongoContentTypesConfig(ContentTypesConfig):
-    default_auto_field = "django_documentdb.fields.ObjectIdAutoField"
-```
-
-Each app reference in the `INSTALLED_APPS` setting must point to the
-corresponding ``AppConfig``. For example, instead of `'django.contrib.admin'`,
-the template uses `'<project_name>.apps.MongoAdminConfig'`.
-
-### Configuring migrations
-
-Because all models must use `ObjectIdAutoField`, each third-party and contrib app
-you use needs to have its own migrations specific to MongoDB.
-
-For example, `settings.py` in the project template specifies:
-
-```python
-MIGRATION_MODULES = {
-    "admin": "mongo_migrations.admin",
-    "auth": "mongo_migrations.auth",
-    "contenttypes": "mongo_migrations.contenttypes",
-}
-```
-
-The project template includes these migrations, but you can generate them if
-you're setting things up manually or if you need to create migrations for
-third-party apps. For example:
-
-```console
-$ python manage.py makemigrations admin auth contenttypes
-Migrations for 'admin':
-  mongo_migrations/admin/0001_initial.py
-    - Create model LogEntry
-...
-```
-
-### Creating Django applications
-
-Whenever you run `python manage.py startapp`, you must remove the line:
-
-`default_auto_field = 'django.db.models.BigAutoField'`
-
-from the new application's `apps.py` file (or change it to reference
- `"django_mongodb.fields.ObjectIdAutoField"`).
-
-Alternatively, you can use the following `startapp` template which includes
-this change:
+If you're using Poetry to manage your dependencies, you can add `django_documentdb` to your project with:
 
 ```bash
-$ python manage.py startapp myapp --template https://github.com/mongodb-labs/django-mongodb-app/archive/refs/heads/5.0.x.zip
+poetry add django_documentdb
 ```
-(where "5.0" matches the version of Django that you're using.)
-
-### Configuring the `DATABASES` setting
-
-After you've set up a project, configure Django's `DATABASES` setting similar
-to this:
-
-```python
-DATABASES = {
-    "default": {
-        "ENGINE": "django_documentdb",
-        "NAME": "my_database",
-        "USER": "my_user",
-        "PASSWORD": "my_password",
-        "OPTIONS": {...},
-    },
-}
-```
-
-`OPTIONS` is an optional dictionary of parameters that will be passed to
-[`MongoClient`](https://pymongo.readthedocs.io/en/stable/api/pymongo/mongo_client.html).
-
-Congratulations, your project is ready to go!
 
 ## Notes on Django QuerySets
 
