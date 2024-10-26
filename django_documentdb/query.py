@@ -163,14 +163,6 @@ def join(self: Join, compiler: "SQLCompiler", connection: "DatabaseWrapper"):
         }
         for lhs_field, rhs_field in zip(lhs_fields, rhs_fields, strict=True)
     ]
-    lookup_pipeline.append(
-        {
-            "$unwind": {
-                "path": f"${self.table_alias}",
-                "preserveNullAndEmptyArrays": True,  # Preserve documents without matches
-            }
-        }
-    )
 
     # Handle any extra conditions if applicable
     if self.join_field.get_extra_restriction(self.table_alias, self.parent_alias):
@@ -179,11 +171,15 @@ def join(self: Join, compiler: "SQLCompiler", connection: "DatabaseWrapper"):
         ).as_mql(compiler, connection)
         lookup_pipeline.append({"$match": extra_condition})
 
-    # To avoid missing data when using $unwind, handle outer joins
+    # To avoid missing data when using $unwind, an empty collection is added if
+    # the join isn't an inner join. For inner joins, rows with empty arrays are
+    # removed, as $unwind unrolls or unnests the array and removes the row if
+    # it's empty. This is the expected behavior for inner joins. For left outer
+    # joins (LOUTER), however, an empty collection is returned.
     if self.join_type != INNER:
         lookup_pipeline.append(
             {
-                "$set": {
+                "$addFields": {
                     self.table_alias: {
                         "$cond": {
                             "if": {
@@ -199,6 +195,15 @@ def join(self: Join, compiler: "SQLCompiler", connection: "DatabaseWrapper"):
                 }
             }
         )
+
+    lookup_pipeline.append(
+        {
+            "$unwind": {
+                "path": f"${self.table_alias}",
+                "preserveNullAndEmptyArrays": True,  # Preserve documents without matches
+            }
+        }
+    )
 
     return lookup_pipeline
 
