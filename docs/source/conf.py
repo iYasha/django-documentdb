@@ -12,7 +12,7 @@ from __future__ import annotations
 project = "django_documentdb"
 copyright = "2024, iYasha"
 author = "iYasha"
-release = "0.0.2"  # TODO: Change to dynamic version, e.g.: _version("django_documentdb")
+release = "0.0.3"  # TODO: Change to dynamic version, e.g.: _version("django_documentdb")
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
