@@ -42,6 +42,7 @@ dependencies = [
 docs = [ "sphinx>=7"]
 
 [project.urls]
+Documentation = "https://django-documentdb.readthedocs.io"
 Source = "https://github.com/iYasha/django-documentdb"
 Tracker = "https://github.com/iYasha/django-documentdb/issues"
 
