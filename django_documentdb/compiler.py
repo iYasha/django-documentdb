@@ -532,10 +532,8 @@ class SQLCompiler(compiler.SQLCompiler):
             try:
                 if isinstance(expr, Col) and name == expr.target.column and not force_expression:
                     fields[collection][name] = 1
-                elif isinstance(expr, Col):
-                    fields[collection][name] = f"${expr.as_mql(self, self.connection)}"
                 else:
-                    fields[collection][name] = expr.as_mql(self, self.connection)
+                    fields[collection][name] = f"${expr.as_mql(self, self.connection)}"
 
             except EmptyResultSet:
                 empty_result_set_value = getattr(expr, "empty_result_set_value", NotImplemented)
