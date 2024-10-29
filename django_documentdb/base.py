@@ -103,13 +103,6 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         "lte": lambda a, b: {a: {"$lte": b}},
         "in": lambda a, b: {a: {"$in": b}},
         "isnull": _isnull_operator,
-        # "range": lambda a, b: {
-        #     "$and": [
-        #         {"$or": [DatabaseWrapper._isnull_operator(b[0], True), {"$gte": [a, b[0]]}]},
-        #         {"$or": [DatabaseWrapper._isnull_operator(b[1], True), {"$lte": [a, b[1]]}]},
-        #     ]
-        # },
-        # correct range included null
         "range": lambda a, b: {
             "$and": [
                 {"$or": [{a: {"$gte": b[0]}}, {a: None}]},
