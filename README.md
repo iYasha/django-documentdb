@@ -46,7 +46,6 @@ class TestModel(DocumentModel):
 
     class Meta:
         db_table = "test_db"
-        use_mongodb = True
 ```
 
 ### Available options with `DocumentQuerySet`:
