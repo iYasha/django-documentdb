@@ -1,6 +1,9 @@
 ===========
 Get Started
 ===========
+
+.. _installation:
+
 Installation
 ============
 
