@@ -13,8 +13,4 @@ Welcome to django_documentdb's documentation!
    get_started
    configuration
    api_references
-
-.. automodule:: django_documentdb
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   debugging

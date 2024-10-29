@@ -15,6 +15,9 @@ from .query_utils import regex_match
 from .schema import DatabaseSchemaEditor
 from .utils import IndexNotUsedWarning, OperationDebugWrapper
 
+# ignore warning from pymongo about DocumentDB
+warnings.filterwarnings("ignore", "You appear to be connected to a DocumentDB cluster", UserWarning)
+
 
 class Cursor:
     """A "nodb" cursor that does nothing except work on a context manager."""
@@ -102,8 +105,8 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         "isnull": _isnull_operator,
         "range": lambda a, b: {
             "$and": [
-                {"$or": [DatabaseWrapper._isnull_operator(b[0], True), {"$gte": [a, b[0]]}]},
-                {"$or": [DatabaseWrapper._isnull_operator(b[1], True), {"$lte": [a, b[1]]}]},
+                {"$or": [{a: {"$gte": b[0]}}, {a: None}]},
+                {"$or": [{a: {"$lte": b[1]}}, {a: None}]},
             ]
         },
         "iexact": lambda a, b: regex_match(a, f"^{b}$", insensitive=True),
@@ -117,8 +120,8 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         "iregex": lambda a, b: regex_match(a, b, insensitive=True),
     }
 
-    display_name = "MongoDB"
-    vendor = "mongodb"
+    display_name = "DocumentDB"
+    vendor = "documentdb"
     Database = Database
     SchemaEditorClass = DatabaseSchemaEditor
     client_class = DatabaseClient
@@ -158,7 +161,7 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         settings_dict = self.settings_dict
         self.connection = MongoClient(
             host=settings_dict["HOST"] or None,
-            port=int(settings_dict["PORT"] or 27017),
+            port=int(settings_dict.get("PORT") or 27017),
             username=settings_dict.get("USER"),
             password=settings_dict.get("PASSWORD"),
             **settings_dict["OPTIONS"],
