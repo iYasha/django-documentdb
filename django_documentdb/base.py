@@ -15,6 +15,9 @@ from .query_utils import regex_match
 from .schema import DatabaseSchemaEditor
 from .utils import IndexNotUsedWarning, OperationDebugWrapper
 
+# ignore warning from pymongo about DocumentDB
+warnings.filterwarnings("ignore", "You appear to be connected to a DocumentDB cluster", UserWarning)
+
 
 class Cursor:
     """A "nodb" cursor that does nothing except work on a context manager."""
@@ -117,8 +120,8 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         "iregex": lambda a, b: regex_match(a, b, insensitive=True),
     }
 
-    display_name = "MongoDB"
-    vendor = "mongodb"
+    display_name = "DocumentDB"
+    vendor = "documentdb"
     Database = Database
     SchemaEditorClass = DatabaseSchemaEditor
     client_class = DatabaseClient
@@ -158,7 +161,7 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         settings_dict = self.settings_dict
         self.connection = MongoClient(
             host=settings_dict["HOST"] or None,
-            port=int(settings_dict["PORT"] or 27017),
+            port=int(settings_dict.get("PORT") or 27017),
             username=settings_dict.get("USER"),
             password=settings_dict.get("PASSWORD"),
             **settings_dict["OPTIONS"],
