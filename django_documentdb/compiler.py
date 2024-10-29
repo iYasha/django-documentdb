@@ -2,7 +2,6 @@ import itertools
 import pprint
 from collections import defaultdict
 
-from bson import SON
 from django.core.exceptions import EmptyResultSet, FieldError, FullResultSet
 from django.db import IntegrityError, NotSupportedError
 from django.db.models import Count
@@ -191,8 +190,6 @@ class SQLCompiler(compiler.SQLCompiler):
             pipeline.append({"$group": group})
             projected_fields = {key: f"$_id.{key}" for key in ids}
             pipeline.append({"$addFields": projected_fields})
-            if "_id" not in projected_fields:
-                pipeline.append({"$unset": "_id"})
         return pipeline
 
     def pre_sql_setup(self, with_col_aliases=False):
@@ -502,8 +499,6 @@ class SQLCompiler(compiler.SQLCompiler):
             combinator_pipeline.append({"$group": {"_id": ids}})
             projected_fields = {key: f"$_id.{key}" for key in ids}
             combinator_pipeline.append({"$addFields": projected_fields})
-            if "_id" not in projected_fields:
-                combinator_pipeline.append({"$unset": "_id"})
         return combinator_pipeline
 
     def get_lookup_pipeline(self):
@@ -562,17 +557,19 @@ class SQLCompiler(compiler.SQLCompiler):
         - A bson.SON mapping to pass to $sort.
         - A tuple of ('field_name': Expression, ...) for expressions that need
           to be added to extra_fields.
+
+        Fieldpath should not contain '$'
         """
         fields = []
-        sort_ordering = SON()
+        sort_ordering = {}
         extra_fields = []
         idx = itertools.count(start=1)
         for order in self.order_by_objs or []:
             if isinstance(order.expression, Col):
-                field_name = order.as_mql(self, self.connection).removeprefix("$")
+                field_name = f"{order.as_mql(self, self.connection)}"
                 fields.append((order.expression.target.column, order.expression))
             elif isinstance(order.expression, Ref):
-                field_name = order.as_mql(self, self.connection).removeprefix("$")
+                field_name = f"{order.as_mql(self, self.connection)}"
             else:
                 field_name = f"__order{next(idx)}"
                 fields.append((field_name, order.expression))
