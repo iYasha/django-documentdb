@@ -1,4 +1,4 @@
 sphinx
 sphinx-copybutton
--e .
 sphinx_rtd_theme
+-e .
