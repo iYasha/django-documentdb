@@ -96,7 +96,11 @@ class OperationDebugWrapper:
             # Collection.insert_many() mutates args (the documents) by adding
             #  _id. deepcopy() to avoid logging that version.
             original_args = copy.deepcopy(args)
-            duration, retval = self.profile_call(func, args, kwargs)
+            try:
+                duration, retval = self.profile_call(func, args, kwargs)
+            except Exception as e:
+                self.log(method, 0, original_args, kwargs)
+                raise e
             self.log(method, duration, original_args, kwargs)
             return retval
 
