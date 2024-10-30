@@ -16,7 +16,7 @@ from pymongo.errors import BulkWriteError, DuplicateKeyError, PyMongoError
 if typing.TYPE_CHECKING:
     from django_documentdb.base import DatabaseWrapper
     from django_documentdb.compiler import SQLCompiler
-from django_documentdb.utils import IndexNotUsedWarning
+from django_documentdb.utils import IndexNotUsedWarning, unprefix_dollar
 
 
 def wrap_database_errors(func):
@@ -106,7 +106,7 @@ class MongoQuery:
         if self.extra_fields:
             pipeline.append({"$addFields": self.extra_fields})
         if self.ordering:
-            pipeline.append({"$sort": self.ordering})
+            pipeline.append({"$sort": unprefix_dollar(self.ordering)})
         if self.query.low_mark > 0:
             pipeline.append({"$skip": self.query.low_mark})
         if self.query.high_mark is not None:

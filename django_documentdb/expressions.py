@@ -25,7 +25,7 @@ from django.db.models.expressions import (
 )
 from django.db.models.sql import Query
 
-from django_documentdb.utils import IndexNotUsedWarning
+from django_documentdb.utils import IndexNotUsedWarning, prefix_with_dollar
 
 
 def case(self, compiler, connection):
@@ -73,12 +73,8 @@ def col(self, compiler, connection):  # noqa: ARG001
 
 def combined_expression(self, compiler, connection):
     expressions = [
-        f"${self.lhs.as_mql(compiler, connection)}"
-        if isinstance(self.lhs, Col)
-        else self.lhs.as_mql(compiler, connection),
-        f"${self.rhs.as_mql(compiler, connection)}"
-        if isinstance(self.rhs, Col)
-        else self.rhs.as_mql(compiler, connection),
+        prefix_with_dollar(self.lhs.as_mql(compiler, connection)),
+        prefix_with_dollar(self.rhs.as_mql(compiler, connection)),
     ]
     return connection.ops.combine_expression(self.connector, expressions)
 

@@ -2,6 +2,8 @@ from django.core.exceptions import FullResultSet
 from django.db.models.aggregates import Aggregate
 from django.db.models.expressions import Value
 
+from django_documentdb.utils import prefix_with_dollar
+
 
 def is_direct_value(node):
     return not hasattr(node, "as_sql")
@@ -13,7 +15,7 @@ def process_lhs(node, compiler, connection):
         result = []
         for expr in node.get_source_expressions():
             try:
-                result.append(expr.as_mql(compiler, connection))
+                result.append(prefix_with_dollar(expr.as_mql(compiler, connection)))
             except FullResultSet:
                 result.append(Value(True).as_mql(compiler, connection))
         if isinstance(node, Aggregate):
