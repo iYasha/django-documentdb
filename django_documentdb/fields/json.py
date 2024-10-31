@@ -72,7 +72,7 @@ def json_exact_process_rhs(self, compiler, connection):
     """Skip JSONExact.process_rhs()'s conversion of None to "null"."""
     return (
         super(JSONExact, self).process_rhs(compiler, connection)
-        if connection.vendor == "mongodb"
+        if connection.vendor == "documentdb"
         else _process_rhs(self, compiler, connection)
     )
 

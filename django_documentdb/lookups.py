@@ -23,7 +23,7 @@ _field_resolve_expression_parameter = FieldGetDbPrepValueIterableMixin.resolve_e
 def field_resolve_expression_parameter(self, compiler, connection, sql, param):
     """For MongoDB, this method must call as_mql() instead of as_sql()."""
     sql, sql_params = _field_resolve_expression_parameter(self, compiler, connection, sql, param)
-    if connection.vendor == "mongodb":
+    if connection.vendor == "documentdb":
         params = [param]
         if hasattr(param, "resolve_expression"):
             param = param.resolve_expression(compiler.query)

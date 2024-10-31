@@ -37,6 +37,7 @@ def set_wrapped_methods(cls):
 class OperationDebugWrapper:
     # The PyMongo database and collection methods that this backend uses.
     wrapped_methods = {
+        "find",
         "aggregate",
         "create_collection",
         "create_indexes",
@@ -70,7 +71,8 @@ class OperationDebugWrapper:
         # added to this logging.
         msg = "(%.3f) %s"
         args = ", ".join(repr(arg) for arg in args)
-        operation = f"db.{self.collection_name}{op}({args})"
+        kwargs = ", ".join(f"{k}={v!r}" for k, v in (kwargs or {}).items())
+        operation = f"db.{self.collection_name}{op}({args} {kwargs})"
         if len(settings.DATABASES) > 1:
             msg += f"; alias={self.db.alias}"
         self.db.queries_log.append(
@@ -115,7 +117,8 @@ class OperationCollector(OperationDebugWrapper):
 
     def log(self, op, args, kwargs=None):
         args = ", ".join(repr(arg) for arg in args)
-        operation = f"db.{self.collection_name}{op}({args})"
+        kwargs = ", ".join(f"{k}={v!r}" for k, v in (kwargs or {}).items())
+        operation = f"db.{self.collection_name}{op}({args} {kwargs})"
         self.collected_sql.append(operation)
 
     def logging_wrapper(method):
