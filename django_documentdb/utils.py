@@ -37,6 +37,7 @@ def set_wrapped_methods(cls):
 class OperationDebugWrapper:
     # The PyMongo database and collection methods that this backend uses.
     wrapped_methods = {
+        "find",
         "aggregate",
         "create_collection",
         "create_indexes",
@@ -65,12 +66,16 @@ class OperationDebugWrapper:
         duration = time.monotonic() - start
         return duration, retval
 
+    def to_documentdb_syntax(self, query):
+        return query.replace("None", "null").replace("True", "true").replace("False", "false")
+
     def log(self, op, duration, args, kwargs=None):
         # If kwargs are used by any operations in the future, they must be
         # added to this logging.
         msg = "(%.3f) %s"
         args = ", ".join(repr(arg) for arg in args)
-        operation = f"db.{self.collection_name}{op}({args})"
+        kwargs = ", ".join(f"{k}={v!r}" for k, v in (kwargs or {}).items())
+        operation = f"db.{self.collection_name}{op}({self.to_documentdb_syntax(args)} {kwargs})"
         if len(settings.DATABASES) > 1:
             msg += f"; alias={self.db.alias}"
         self.db.queries_log.append(
@@ -115,7 +120,8 @@ class OperationCollector(OperationDebugWrapper):
 
     def log(self, op, args, kwargs=None):
         args = ", ".join(repr(arg) for arg in args)
-        operation = f"db.{self.collection_name}{op}({args})"
+        kwargs = ", ".join(f"{k}={v!r}" for k, v in (kwargs or {}).items())
+        operation = f"db.{self.collection_name}{op}({args} {kwargs})"
         self.collected_sql.append(operation)
 
     def logging_wrapper(method):
@@ -135,3 +141,17 @@ class NotOptimalOperationWarning(Warning):
 
 class IndexNotUsedWarning(DocumentDBIncompatibleWarning, NotOptimalOperationWarning):
     pass
+
+
+def prefix_with_dollar(field):
+    if isinstance(field, str):
+        return f"${field}" if not field.startswith("$") else field
+    return field
+
+
+def unprefix_dollar(field):
+    if isinstance(field, dict):
+        return {k[1:] if k.startswith("$") else k: v for k, v in field.items()}
+    if isinstance(field, str):
+        return field[1:] if field.startswith("$") else field
+    return field

@@ -33,6 +33,7 @@ from django.db.models.functions.text import (
 )
 
 from .query_utils import process_lhs
+from .utils import prefix_with_dollar
 
 MONGO_OPERATORS = {
     Ceil: "ceil",
@@ -102,8 +103,7 @@ def func(self, compiler, connection):
     # Functions are using array syntax and for field name we want to add $
     lhs_mql = process_lhs(self, compiler, connection)
     if isinstance(lhs_mql, list):
-        field_name = lhs_mql[0]
-        lhs_mql[0] = f"${field_name}"
+        lhs_mql = [prefix_with_dollar(field_name) for field_name in lhs_mql]
     operator = MONGO_OPERATORS.get(self.__class__, self.function.lower())
     return {f"${operator}": lhs_mql}
 

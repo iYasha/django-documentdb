@@ -4,10 +4,8 @@ from collections import defaultdict
 
 from django.core.exceptions import EmptyResultSet, FieldError, FullResultSet
 from django.db import IntegrityError, NotSupportedError
-from django.db.models import Count
 from django.db.models.aggregates import Aggregate, Variance
 from django.db.models.expressions import Case, Col, OrderBy, Ref, Value, When
-from django.db.models.functions.comparison import Coalesce
 from django.db.models.functions.math import Power
 from django.db.models.lookups import IsNull
 from django.db.models.sql import compiler
@@ -18,6 +16,7 @@ from pymongo import ASCENDING, DESCENDING
 
 from .base import Cursor
 from .query import MongoQuery, wrap_database_errors
+from .utils import prefix_with_dollar
 
 
 class SQLCompiler(compiler.SQLCompiler):
@@ -95,8 +94,8 @@ class SQLCompiler(compiler.SQLCompiler):
                 group[alias] = sub_expr.as_mql(self, self.connection)
                 replacing_expr = inner_column
             # Count must return 0 rather than null.
-            if isinstance(sub_expr, Count):
-                replacing_expr = Coalesce(replacing_expr, 0)
+            # if isinstance(sub_expr, Count):
+            #     replacing_expr = Coalesce(replacing_expr, 0)
             # Variance = StdDev^2
             if isinstance(sub_expr, Variance):
                 replacing_expr = Power(replacing_expr, 2)
@@ -185,6 +184,32 @@ class SQLCompiler(compiler.SQLCompiler):
         if not ids:
             group["_id"] = None
             pipeline.append({"$group": group})
+
+            # Step 2: Add conditional $unionWith to handle the case of no matching records
+            pipeline.append(
+                {
+                    "$unionWith": {
+                        "coll": self.collection_name,
+                        "pipeline": [
+                            {"$limit": 1},  # Ensures we always have a document in the result set
+                        ],
+                    }
+                }
+            )
+
+            # Step 3: Final $group to select first non-null result for each field
+            pipeline.append(
+                {
+                    "$group": {
+                        "_id": None,
+                        **{
+                            key: {"$first": prefix_with_dollar(key)}
+                            for key in group
+                            if key != "_id"
+                        },
+                    }
+                },
+            )
         else:
             group["_id"] = ids
             pipeline.append({"$group": group})
@@ -528,10 +553,7 @@ class SQLCompiler(compiler.SQLCompiler):
                     fields[collection][name] = 1
                 else:
                     mql = expr.as_mql(self, self.connection)
-                    if isinstance(mql, str):
-                        fields[collection][name] = f"${mql}"
-                    else:
-                        fields[collection][name] = mql
+                    fields[collection][name] = prefix_with_dollar(mql)
 
             except EmptyResultSet:
                 empty_result_set_value = getattr(expr, "empty_result_set_value", NotImplemented)

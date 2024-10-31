@@ -3,6 +3,7 @@ from django.db.models.expressions import Case, Value, When
 from django.db.models.lookups import IsNull
 
 from .query_utils import process_lhs
+from .utils import prefix_with_dollar
 
 # Aggregates whose MongoDB aggregation name differ from Aggregate.function.lower().
 MONGO_AGGREGATIONS = {Count: "sum"}
@@ -26,9 +27,9 @@ def aggregate(
         node = self
     lhs_mql = process_lhs(node, compiler, connection)
     if resolve_inner_expression:
-        return lhs_mql
+        return prefix_with_dollar(lhs_mql)
     operator = operator or MONGO_AGGREGATIONS.get(self.__class__, self.function.lower())
-    return {f"${operator}": f"${lhs_mql}"}
+    return {f"${operator}": prefix_with_dollar(lhs_mql)}
 
 
 def count(self, compiler, connection, resolve_inner_expression=False, **extra_context):  # noqa: ARG001
