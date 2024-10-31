@@ -100,6 +100,7 @@ class MongoQuery:
         return (
             self.mongo_query
             and not self.lookup_pipeline
+            and not self.aggregation_pipeline
             and not self.subqueries
             and not self.combinator_pipeline
             and not self.extra_fields
