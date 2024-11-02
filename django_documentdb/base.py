@@ -13,7 +13,7 @@ from .introspection import DatabaseIntrospection
 from .operations import DatabaseOperations
 from .query_utils import regex_match
 from .schema import DatabaseSchemaEditor
-from .utils import IndexNotUsedWarning, OperationDebugWrapper
+from .utils import IndexNotUsedWarning, OperationDebugWrapper, prefix_with_dollar
 
 # ignore warning from pymongo about DocumentDB
 warnings.filterwarnings("ignore", "You appear to be connected to a DocumentDB cluster", UserWarning)
@@ -87,37 +87,58 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         "iendswith": "LIKE '%%' || UPPER({})",
     }
 
-    def _isnull_operator(a, b):
+    def _isnull_operator(a, b, pos: bool = False):
         if b:
-            return {a: None}
+            return {a: None} if not pos else {"$eq": [prefix_with_dollar(a), None]}
 
         warnings.warn("You're using $ne, index will not be used", IndexNotUsedWarning, stacklevel=1)
-        return {a: {"$ne": None}}
+        return {a: {"$ne": None}} if not pos else {"$ne": [prefix_with_dollar(a), None]}
 
     mongo_operators = {
-        # Where a = field_name, b = value
-        "exact": lambda a, b: {a: b},
-        "gt": lambda a, b: {a: {"$gt": b}},
-        "gte": lambda a, b: {a: {"$gte": b}},
-        "lt": lambda a, b: {a: {"$lt": b}},
-        "lte": lambda a, b: {a: {"$lte": b}},
-        "in": lambda a, b: {a: {"$in": b}},
+        # Where a = field_name, b = value, pos = positional operator syntax
+        "exact": lambda a, b, pos: {a: b} if not pos else {"$eq": [prefix_with_dollar(a), b]},
+        "gt": lambda a, b, pos: {a: {"$gt": b}} if not pos else {"$gt": [prefix_with_dollar(a), b]},
+        "gte": lambda a, b, pos: {a: {"$gte": b}}
+        if not pos
+        else {"$gte": [prefix_with_dollar(a), b]},
+        "lt": lambda a, b, pos: {a: {"$lt": b}} if not pos else {"$lt": [prefix_with_dollar(a), b]},
+        "lte": lambda a, b, pos: {a: {"$lte": b}}
+        if not pos
+        else {"$lte": [prefix_with_dollar(a), b]},
+        "in": lambda a, b, pos: {a: {"$in": b}} if not pos else {"$in": [prefix_with_dollar(a), b]},
         "isnull": _isnull_operator,
-        "range": lambda a, b: {
+        "range": lambda a, b, pos: {
             "$and": [
                 {"$or": [{a: {"$gte": b[0]}}, {a: None}]},
                 {"$or": [{a: {"$lte": b[1]}}, {a: None}]},
             ]
+        }
+        if not pos
+        else {
+            "$and": [
+                {
+                    "$or": [
+                        {"$gte": [prefix_with_dollar(a), b[0]]},
+                        {"$eq": [prefix_with_dollar(a), None]},
+                    ]
+                },
+                {
+                    "$or": [
+                        {"$lte": [prefix_with_dollar(a), b[1]]},
+                        {"$eq": [prefix_with_dollar(a), None]},
+                    ]
+                },
+            ]
         },
-        "iexact": lambda a, b: regex_match(a, f"^{b}$", insensitive=True),
-        "startswith": lambda a, b: regex_match(a, f"^{b}"),
-        "istartswith": lambda a, b: regex_match(a, f"^{b}", insensitive=True),
-        "endswith": lambda a, b: regex_match(a, f"{b}$"),
-        "iendswith": lambda a, b: regex_match(a, f"{b}$", insensitive=True),
-        "contains": lambda a, b: regex_match(a, b),
-        "icontains": lambda a, b: regex_match(a, b, insensitive=True),
-        "regex": lambda a, b: regex_match(a, b),
-        "iregex": lambda a, b: regex_match(a, b, insensitive=True),
+        "iexact": lambda a, b, pos: regex_match(a, f"^{b}$", insensitive=True, pos=pos),
+        "startswith": lambda a, b, pos: regex_match(a, f"^{b}", pos=pos),
+        "istartswith": lambda a, b, pos: regex_match(a, f"^{b}", insensitive=True, pos=pos),
+        "endswith": lambda a, b, pos: regex_match(a, f"{b}$", pos=pos),
+        "iendswith": lambda a, b, pos: regex_match(a, f"{b}$", insensitive=True, pos=pos),
+        "contains": lambda a, b, pos: regex_match(a, b, pos=pos),
+        "icontains": lambda a, b, pos: regex_match(a, b, insensitive=True, pos=pos),
+        "regex": lambda a, b, pos: regex_match(a, b, pos=pos),
+        "iregex": lambda a, b, pos: regex_match(a, b, insensitive=True, pos=pos),
     }
 
     display_name = "DocumentDB"

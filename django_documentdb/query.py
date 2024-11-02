@@ -150,21 +150,11 @@ class MongoQuery:
         if self.subquery_lookup:
             table_output = self.subquery_lookup["as"]
             pipeline = [
-                {"$lookup": {**self.subquery_lookup, "pipeline": pipeline}},
+                {"$lookup": {**self.subquery_lookup}},
                 {
-                    "$set": {
-                        table_output: {
-                            "$cond": {
-                                "if": {
-                                    "$or": [
-                                        {"$eq": [{"$type": f"${table_output}"}, "missing"]},
-                                        {"$eq": [{"$size": f"${table_output}"}, 0]},
-                                    ]
-                                },
-                                "then": {},
-                                "else": {"$arrayElemAt": [f"${table_output}", 0]},
-                            }
-                        }
+                    "$unwind": {
+                        "path": f"${table_output}",
+                        "preserveNullAndEmptyArrays": True,
                     }
                 },
             ]
@@ -244,7 +234,7 @@ def join(self: Join, compiler: "SQLCompiler", connection: "DatabaseWrapper"):
     return lookup_pipeline
 
 
-def where_node(self, compiler, connection):
+def where_node(self, compiler, connection, positional_operator_syntax: bool = False):
     if self.connector == AND:
         full_needed, empty_needed = len(self.children), 1
     else:
@@ -267,14 +257,16 @@ def where_node(self, compiler, connection):
         if len(self.children) > 2:
             rhs_sum = Mod(rhs_sum, 2)
         rhs = Exact(1, rhs_sum)
-        return self.__class__([lhs, rhs], AND, self.negated).as_mql(compiler, connection)
+        return self.__class__([lhs, rhs], AND, self.negated).as_mql(
+            compiler, connection, positional_operator_syntax
+        )
     else:
         operator = "$or"
 
     children_mql = []
     for child in self.children:
         try:
-            mql = child.as_mql(compiler, connection)
+            mql = child.as_mql(compiler, connection, positional_operator_syntax)
         except EmptyResultSet:
             empty_needed -= 1
         except FullResultSet:

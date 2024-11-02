@@ -48,7 +48,10 @@ def process_rhs(node, compiler, connection):
     return connection.ops.prep_lookup_value(value, node.lhs.output_field, node.lookup_name)
 
 
-def regex_match(field, regex: str, insensitive=False):
+def regex_match(field, regex: str, insensitive=False, pos: bool = False):
+    """
+    - pos = positional operator syntax (e.g. {"$eq": [a, b]})
+    """
     # warnings.warn(
     #     "It's better to use hint with regex operations.\n"
     #     "See https://docs.aws.amazon.com/documentdb/latest/developerguide/functional-differences.html"
@@ -57,4 +60,10 @@ def regex_match(field, regex: str, insensitive=False):
     #     category=NotOptimalOperationWarning,
     # )
     options = "i" if insensitive else ""
-    return {field: {"$regex": regex, "$options": options}}
+    return (
+        {field: {"$regex": regex, "$options": options}}
+        if not pos
+        else {
+            "$regexMatch": {"input": prefix_with_dollar(field), "regex": regex, "options": options}
+        }
+    )

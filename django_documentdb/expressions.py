@@ -33,13 +33,13 @@ def case(self, compiler, connection):
     for case in self.cases:
         case_mql = {}
         try:
-            case_mql["case"] = case.as_mql(compiler, connection)
+            case_mql["case"] = case.as_mql(compiler, connection, positional_operator_syntax=True)
         except EmptyResultSet:
             continue
         except FullResultSet:
             default_mql = case.result.as_mql(compiler, connection)
             break
-        case_mql["then"] = case.result.as_mql(compiler, connection)
+        case_mql["then"] = prefix_with_dollar(case.result.as_mql(compiler, connection))
         case_parts.append(case_mql)
     else:
         default_mql = self.default.as_mql(compiler, connection)
@@ -117,10 +117,15 @@ def query(self, compiler, connection, lookup_name=None):
     subquery.subquery_lookup = {
         "as": table_output,
         "from": from_table,
-        "let": {
-            compiler.PARENT_FIELD_TEMPLATE.format(i): col.as_mql(compiler, connection)
-            for col, i in subquery_compiler.column_indices.items()
-        },
+        "localField": next(
+            iter(
+                [
+                    col.as_mql(compiler, connection)
+                    for col, i in subquery_compiler.column_indices.items()
+                ]
+            )
+        ),
+        "foreignField": next(iter(subquery.mongo_query.keys())),
     }
     # The result must be a list of values. The output is compressed with an
     # aggregation pipeline.
@@ -187,16 +192,18 @@ def subquery(self, compiler, connection, lookup_name=None):
     return self.query.as_mql(compiler, connection, lookup_name=lookup_name)
 
 
-def exists(self, compiler, connection, lookup_name=None):
+def exists(self, compiler, connection, lookup_name=None, positional_operator_syntax: bool = False):
     try:
         lhs_mql = subquery(self, compiler, connection, lookup_name=lookup_name)
     except EmptyResultSet:
         return Value(False).as_mql(compiler, connection)
-    return connection.mongo_operators["isnull"](lhs_mql, False)
+    return connection.mongo_operators["isnull"](lhs_mql, False, pos=positional_operator_syntax)
 
 
-def when(self, compiler, connection):
-    return self.condition.as_mql(compiler, connection)
+def when(self, compiler, connection, positional_operator_syntax: bool = False):
+    return self.condition.as_mql(
+        compiler, connection, positional_operator_syntax=positional_operator_syntax
+    )
 
 
 def value(self, compiler, connection):  # noqa: ARG001

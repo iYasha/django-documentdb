@@ -11,10 +11,10 @@ from django.db.models.lookups import (
 from .query_utils import process_lhs, process_rhs
 
 
-def builtin_lookup(self, compiler, connection):
+def builtin_lookup(self, compiler, connection, positional_operator_syntax: bool = False):
     lhs_mql = process_lhs(self, compiler, connection)
     value = process_rhs(self, compiler, connection)
-    return connection.mongo_operators[self.lookup_name](lhs_mql, value)
+    return connection.mongo_operators[self.lookup_name](lhs_mql, value, positional_operator_syntax)
 
 
 _field_resolve_expression_parameter = FieldGetDbPrepValueIterableMixin.resolve_expression_parameter
@@ -33,7 +33,7 @@ def field_resolve_expression_parameter(self, compiler, connection, sql, param):
     return sql, sql_params
 
 
-def in_(self, compiler, connection):
+def in_(self, compiler, connection, positional_operator_syntax: bool = False):
     if isinstance(self.lhs, MultiColSource):
         raise NotImplementedError("MultiColSource is not supported.")
     db_rhs = getattr(self.rhs, "_db", None)
@@ -42,14 +42,14 @@ def in_(self, compiler, connection):
             "Subqueries aren't allowed across different databases. Force "
             "the inner query to be evaluated using `list(inner_query)`."
         )
-    return builtin_lookup(self, compiler, connection)
+    return builtin_lookup(self, compiler, connection, positional_operator_syntax)
 
 
-def is_null(self, compiler, connection):
+def is_null(self, compiler, connection, positional_operator_syntax: bool = False):
     if not isinstance(self.rhs, bool):
         raise ValueError("The QuerySet value for an isnull lookup must be True or False.")
     lhs_mql = process_lhs(self, compiler, connection)
-    return connection.mongo_operators["isnull"](lhs_mql, self.rhs)
+    return connection.mongo_operators["isnull"](lhs_mql, self.rhs, pos=positional_operator_syntax)
 
 
 # from https://www.pcre.org/current/doc/html/pcre2pattern.html#SEC4

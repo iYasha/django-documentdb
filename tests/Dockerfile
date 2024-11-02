@@ -17,4 +17,4 @@ RUN pip install -e django
 RUN pip install -r django/tests/requirements/py3.txt
 
 
-CMD ["python", "django/tests/runtests.py", "--settings", "documentdb_settings", "-v", "2", "aggregation"]
+CMD ["python", "django/tests/runtests.py", "--settings", "documentdb_settings", "-v", "2", "--failfast", "aggregation"]
