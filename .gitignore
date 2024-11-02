@@ -52,3 +52,4 @@ site/
 
 _development/
 tests/django
+documentdb_settings.py

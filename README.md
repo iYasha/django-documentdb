@@ -110,3 +110,9 @@ class TestModel(DocumentModel):
 ## Forked Project
 
 This project, **django-documentdb**, is a fork of the original **django-mongodb** library, which aimed to integrate MongoDB with Django. The fork was created to enhance compatibility with AWS DocumentDB, addressing the limitations of its API support while maintaining the core functionalities of the original library. We appreciate the work of the MongoDB Python Team and aim to build upon their foundation to better serve users needing DocumentDB integration.
+
+## Run tests
+
+docker build . -t test:latest -f tests/Dockerfile && docker run -it test:latest
+
+docker build . -t mongo_test:latest -f tests/mongodb.Dockerfile && docker run -it mongo_test:latest

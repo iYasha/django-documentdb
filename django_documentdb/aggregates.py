@@ -65,12 +65,8 @@ def count(self, compiler, connection, resolve_inner_expression=False, **extra_co
     return {"$add": [{"$size": lhs_mql}, exits_null]}
 
 
-def stddev_variance(self, compiler, connection, **extra_context):
-    if self.function.endswith("_SAMP"):
-        operator = "stdDevSamp"
-    elif self.function.endswith("_POP"):
-        operator = "stdDevPop"
-    return aggregate(self, compiler, connection, operator=operator, **extra_context)
+def stddev_variance(*args, **kwargs):  # noqa: ARG001
+    raise NotImplementedError("StdDev and Variance are not supported yet.")
 
 
 def register_aggregates():

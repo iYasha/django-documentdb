@@ -4,11 +4,12 @@ ENV PYTHONUNBUFFERED 1
 
 RUN apt-get update && apt-get install -y git libmemcached-dev
 
-WORKDIR /package-test
+WORKDIR /package-test/
 
 COPY . django-documentdb
 COPY ./tests/django django
 COPY .github/workflows/documentdb_settings.py django/tests/
+COPY rds-combined-ca-bundle.pem /package-test/rds-combined-ca-bundle.pem
 RUN find django -type f -exec sed -i 's/django_mongodb/django_documentdb/g' {} +
 
 RUN pip install -e django-documentdb

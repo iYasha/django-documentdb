@@ -129,6 +129,7 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
             return
         # Unset field on existing documents.
         if column := field.column:
+            # TODO: documentdb doesn't support $unset
             self.get_collection(model._meta.db_table).update_many({}, {"$unset": {column: ""}})
             if self._field_should_be_indexed(model, field):
                 self._remove_field_index(model, field)

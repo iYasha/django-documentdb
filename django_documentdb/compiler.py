@@ -184,32 +184,6 @@ class SQLCompiler(compiler.SQLCompiler):
         if not ids:
             group["_id"] = None
             pipeline.append({"$group": group})
-
-            # Step 2: Add conditional $unionWith to handle the case of no matching records
-            pipeline.append(
-                {
-                    "$unionWith": {
-                        "coll": self.collection_name,
-                        "pipeline": [
-                            {"$limit": 1},  # Ensures we always have a document in the result set
-                        ],
-                    }
-                }
-            )
-
-            # Step 3: Final $group to select first non-null result for each field
-            pipeline.append(
-                {
-                    "$group": {
-                        "_id": None,
-                        **{
-                            key: {"$first": prefix_with_dollar(key)}
-                            for key in group
-                            if key != "_id"
-                        },
-                    }
-                },
-            )
         else:
             group["_id"] = ids
             pipeline.append({"$group": group})
@@ -504,10 +478,11 @@ class SQLCompiler(compiler.SQLCompiler):
             inner_pipeline.append({"$project": fields})
             # Combine query with the current combinator pipeline.
             if combinator_pipeline:
+                raise NotSupportedError
                 combinator_pipeline.append(
                     {"$unionWith": {"coll": compiler_.collection_name, "pipeline": inner_pipeline}}
                 )
-            else:
+            else:  # noqa: RET506
                 combinator_pipeline = inner_pipeline
         if not self.query.combinator_all:
             ids = defaultdict(dict)

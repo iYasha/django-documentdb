@@ -98,7 +98,9 @@ class MongoQuery:
     @property
     def is_simple_lookup(self) -> bool:
         return (
-            (self.lookup_pipeline or self.mongo_query)
+            self.mongo_query
+            and not self.lookup_pipeline
+            and not self.aggregation_pipeline
             and not self.subqueries
             and not self.combinator_pipeline
             and not self.extra_fields
@@ -107,9 +109,7 @@ class MongoQuery:
 
     def build_simple_lookup(self) -> dict:
         pipeline = {}
-        if self.lookup_pipeline:
-            pipeline["filter"] = self.lookup_pipeline
-        elif self.mongo_query:
+        if self.mongo_query:
             pipeline["filter"] = self.mongo_query
         else:
             raise ValueError("No lookup pipeline or query found.")
