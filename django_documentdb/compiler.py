@@ -363,8 +363,8 @@ class SQLCompiler(compiler.SQLCompiler):
                 query.project_fields = self.get_project_fields(columns, ordering_fields)
             # If columns is None, then get_project_fields() won't add
             # ordering_fields to $project. Use $addFields (extra_fields) instead.
-            if columns is None:
-                extra_fields += ordering_fields
+            # if columns is None:
+            #     extra_fields += ordering_fields
             query.lookup_pipeline = self.get_lookup_pipeline()
             where = self.get_where()
             try:

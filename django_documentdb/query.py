@@ -97,7 +97,7 @@ class MongoQuery:
 
     @property
     def is_simple_lookup(self) -> bool:
-        return (
+        return bool(
             self.mongo_query
             and not self.lookup_pipeline
             and not self.aggregation_pipeline
