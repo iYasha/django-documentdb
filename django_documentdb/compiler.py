@@ -18,6 +18,7 @@ from pymongo import ASCENDING, DESCENDING
 
 from .base import Cursor
 from .query import MongoQuery, wrap_database_errors
+from .utils import Distinct
 
 
 class SQLCompiler(compiler.SQLCompiler):
@@ -245,7 +246,8 @@ class SQLCompiler(compiler.SQLCompiler):
             else:
                 return self._make_result(obj, columns)
         # result_type is MULTI
-        cursor.batch_size(chunk_size)
+        if not isinstance(cursor, list):
+            cursor.batch_size(chunk_size)
         result = self.cursor_iter(cursor, chunk_size, columns)
         if not chunked_fetch:
             # If using non-chunked reads, read data into memory.
@@ -347,16 +349,8 @@ class SQLCompiler(compiler.SQLCompiler):
             if self.query.distinct:
                 # If query is distinct, build a $group stage for distinct
                 # fields, then set project fields based on the grouped _id.
-                distinct_fields = self.get_project_fields(
-                    columns, ordering_fields, force_expression=True
-                )
-                if not query.aggregation_pipeline:
-                    query.aggregation_pipeline = []
-                query.aggregation_pipeline.extend(
-                    [
-                        {"$group": {"_id": distinct_fields}},
-                        {"$project": {key: f"$_id.{key}" for key in distinct_fields}},
-                    ]
+                query.distinct = Distinct(
+                    fields=self.get_project_fields(columns, ordering_fields, force_expression=True)
                 )
             else:
                 # Otherwise, project fields without grouping.

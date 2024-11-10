@@ -1,5 +1,6 @@
 import copy
 import time
+from functools import cached_property
 
 import django
 from django.conf import settings
@@ -39,6 +40,7 @@ class OperationDebugWrapper:
     wrapped_methods = {
         "find",
         "aggregate",
+        "distinct",
         "create_collection",
         "create_indexes",
         "drop",
@@ -138,3 +140,25 @@ class NotOptimalOperationWarning(Warning):
 
 class IndexNotUsedWarning(DocumentDBIncompatibleWarning, NotOptimalOperationWarning):
     pass
+
+
+class Distinct:
+    def __init__(
+        self,
+        fields: dict[str, str | dict],
+    ):
+        self.fields = fields
+
+    def aggregation(self):
+        return [
+            {"$group": {"_id": self.fields}},
+            {"$project": {key: f"$_id.{key}" for key in self.fields}},
+        ]
+
+    @cached_property
+    def is_simple_distinct(self):
+        return len(self.fields) == 1
+
+    @property
+    def field(self) -> str:
+        return list(self.fields.keys())[0]  # noqa: RUF015
