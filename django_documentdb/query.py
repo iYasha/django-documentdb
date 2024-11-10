@@ -18,7 +18,7 @@ from pymongo.typings import _DocumentType
 if typing.TYPE_CHECKING:
     from django_documentdb.base import DatabaseWrapper
     from django_documentdb.compiler import SQLCompiler
-from django_documentdb.utils import IndexNotUsedWarning, unprefix_dollar
+from django_documentdb.utils import Distinct, IndexNotUsedWarning, unprefix_dollar
 
 
 def wrap_database_errors(func):
@@ -61,6 +61,7 @@ class MongoQuery:
         self.mongo_query = getattr(compiler.query, "raw_query", {})
         self.subqueries = None
         self.lookup_pipeline = None
+        self.distinct: Distinct | None = None
         self.project_fields = None
         self.aggregation_pipeline = compiler.aggregation_pipeline
         self.extra_fields = None
@@ -80,16 +81,24 @@ class MongoQuery:
         return self.collection.delete_many(self.mongo_query).deleted_count
 
     @wrap_database_errors
-    def get_cursor(self) -> Cursor[_DocumentType]:
+    def get_cursor(self) -> Cursor[_DocumentType] | list[dict]:
         """
         Return a pymongo CommandCursor that can be iterated on to give the
         results of the query.
         """
-        if self.is_simple_lookup:
+        if self.is_simple_lookup and self.distinct and self.distinct.is_simple_distinct:
+            results = self.collection.distinct(
+                self.distinct.field, **self.build_simple_lookup(limit=False, offset=False)
+            )
+            return [{self.distinct.field: x} for x in results]
+
+        if self.is_simple_lookup and not self.distinct:
             pipeline = self.build_simple_lookup()
             return self.collection.find(**pipeline)
 
         pipeline = self.get_pipeline()
+        if self.distinct:
+            pipeline.extend(self.distinct.aggregation())
         options = {}
         if hasattr(self.query, "_index_hint"):
             options["hint"] = self.query._index_hint
@@ -97,7 +106,7 @@ class MongoQuery:
 
     @property
     def is_simple_lookup(self) -> bool:
-        return (
+        return bool(
             self.mongo_query
             and not self.lookup_pipeline
             and not self.aggregation_pipeline
@@ -107,7 +116,7 @@ class MongoQuery:
             and not self.subquery_lookup
         )
 
-    def build_simple_lookup(self) -> dict:
+    def build_simple_lookup(self, **kwargs) -> dict:
         pipeline = {}
         if self.mongo_query:
             pipeline["filter"] = self.mongo_query
@@ -117,9 +126,9 @@ class MongoQuery:
             pipeline["projection"] = self.project_fields
         if self.ordering:
             pipeline["sort"] = self.ordering
-        if self.query.low_mark > 0:
+        if self.query.low_mark > 0 and kwargs.get("offset", True):
             pipeline["skip"] = self.query.low_mark
-        if self.query.high_mark is not None:
+        if self.query.high_mark is not None and kwargs.get("limit", True):
             pipeline["limit"] = self.query.high_mark - self.query.low_mark
         if hasattr(self.query, "_index_hint"):
             pipeline["hint"] = self.query._index_hint
