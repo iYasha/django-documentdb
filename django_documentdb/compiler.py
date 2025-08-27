@@ -2,6 +2,7 @@ import itertools
 import pprint
 from collections import defaultdict
 
+from bson import SON
 from django.core.exceptions import EmptyResultSet, FieldError, FullResultSet
 from django.db import IntegrityError, NotSupportedError
 from django.db.models import Count
@@ -554,15 +555,15 @@ class SQLCompiler(compiler.SQLCompiler):
         Fieldpath should not contain '$'
         """
         fields = []
-        sort_ordering = {}
+        sort_ordering = SON()
         extra_fields = []
         idx = itertools.count(start=1)
         for order in self.order_by_objs or []:
             if isinstance(order.expression, Col):
-                field_name = f"{order.as_mql(self, self.connection)}"
+                field_name = order.as_mql(self, self.connection).removeprefix("$")
                 fields.append((order.expression.target.column, order.expression))
             elif isinstance(order.expression, Ref):
-                field_name = f"{order.as_mql(self, self.connection)}"
+                field_name = order.as_mql(self, self.connection).removeprefix("$")
             else:
                 field_name = f"__order{next(idx)}"
                 fields.append((field_name, order.expression))
@@ -684,13 +685,11 @@ class SQLUpdateCompiler(compiler.SQLUpdateCompiler, SQLCompiler):
                 value = value.resolve_expression(self.query, allow_joins=False, for_save=True)
                 if value.contains_aggregate:
                     raise FieldError(
-                        "Aggregate functions are not allowed in this query "
-                        f"({field.name}={value})."
+                        f"Aggregate functions are not allowed in this query ({field.name}={value})."
                     )
                 if value.contains_over_clause:
                     raise FieldError(
-                        "Window expressions are not allowed in this query "
-                        f"({field.name}={value})."
+                        f"Window expressions are not allowed in this query ({field.name}={value})."
                     )
             elif hasattr(value, "prepare_database_save"):
                 if field.remote_field:
